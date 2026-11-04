@@ -41,8 +41,12 @@ To make that safe and practical you need four things:
 
 **Why not run the agent on the Windows laptop directly?** You can, but the videos'
 advice is sound: an agent you let run freely should live on a machine where a
-mistake costs nothing. The Legion holds your personal life. And Windows 10 no
-longer gets regular security updates. The T480s is a spare. Linux is also simply
+mistake costs nothing. The Legion holds your personal life. And its Windows 10
+is out of security updates: the free EU extended-update year ran out in
+October 2026. (Side note: the Legion's i5-9300H is on Microsoft's Windows 11
+CPU list, so a free upgrade to Windows 11 is probably open to you. Check with
+Microsoft's *PC Health Check* app. That's worth doing for your own safety,
+whatever you decide about this workflow.) The T480s is a spare. Linux is also simply
 the smoother environment for `make`, serial ports, hotspots and the tooling here.
 
 **Why not buy a Raspberry Pi like the video?** You don't need one yet. Video 3
@@ -95,13 +99,15 @@ Embed_WF/
 ├── skills/                 Claude Code skills: /new-project /define /commission
 │                           /build-loop /datasheet /change-request /wrap-up
 ├── tools/new_project.sh    creates ~/projects/<name> from the template
+├── tests/                  tests for the template's Python tools (run by CI)
 └── template/               a complete, working starter project (see below)
 ```
 
 The **template** is a real firmware for your board, not an empty shell. It starts
 the display, auto-detects R vs C touch, draws your touches, and has a serial
 console (`help`, `info`, `selftest`, `text …`, `bl …`). It also has 14 host
-tests, 6 on-board tests and a pytest bench suite. Every new project starts from
+tests, 7 on-board tests and a pytest bench suite. Its FSD already lists the
+requirements those tests prove, so `make trace` shows how traceability works. Every new project starts from
 it, so the plumbing is proven before you add features.
 
 ---
@@ -120,10 +126,22 @@ it, so the plumbing is proven before you add features.
 4. **Markdown viewer.** VS Code's preview (`Ctrl+Shift+V`) is free and enough.
    Typora (as in video 1) or Obsidian are nicer for long specs. That's optional.
 5. **Claude Desktop stays useful.** Make a *Project* called "ESP32 boards" and
-   upload `hardware/boards/guition-jc4827w543.md`. Use it for thinking out loud,
-   brainstorming ideas before you write `IDEA.md`, explaining concepts, or
-   reviewing an FSD you paste in. Chat is level 0–2; Claude Code on the dev box
-   is level 3+.
+   upload `hardware/boards/guition-jc4827w543.md`. Paste the text from
+   [claude-desktop-project.md](claude-desktop-project.md) into the project's
+   instructions. Use it for thinking out loud, drafting `IDEA.md`, explaining
+   concepts, or reviewing an FSD you paste in. Chat is level 0–2; Claude Code on
+   the dev box is level 3+.
+6. **Optional: drive the dev box from Claude Desktop itself.** Recent versions of
+   Claude Desktop have a **Code** tab that can run Claude Code on another machine
+   over SSH. In the Code tab's environment selector, look for an option to add an
+   SSH connection, and enter `embdev@<t480s-ip>` (set up the SSH key from §B5
+   first). Desktop installs Claude Code on the T480s by itself. The agent then
+   runs **on the T480s** as `embdev`, exactly as in a terminal, so the safety
+   model doesn't change. You get it in the app you already use. Two caveats: the
+   feature is new and its menus move between versions, and its built-in terminal
+   panel may be unavailable for SSH sessions. Keep a plain `ssh` window open for
+   `make`, `tmux` and the like. If your version doesn't have it, the terminal or
+   VS Code route below works the same way.
 
 > Arduino IDE on Windows still works for quick experiments. The board file's
 > Tools settings are unchanged. Just don't flash the same board from both
@@ -239,10 +257,15 @@ You should see something like `/dev/ttyACM0 … ESP32 Family Device`. If not, se
 - **Long runs: use tmux.** `tmux new -s work` then `claude`. If Wi-Fi drops or you
   close the laptop, reconnect and `tmux attach -t work`, and the agent is still
   going. That's how you "go for lunch" like in the video.
-- **Checking in from your phone while out on a job (optional).** Claude Code has
-  a *Remote Control* feature that lets the Claude app follow and steer a session
-  running on your machine. The commands change between versions, so run
-  `claude --help` or check the Claude Code docs for "remote control".
+- **Checking in from your phone while out on a job (optional).** Claude Code's
+  *Remote Control* lets the Claude mobile app or claude.ai follow and steer a
+  session that keeps running **on the T480s**. Inside a running session type
+  `/remote-control` (or start one with `claude remote-control`), then open the
+  link or QR code on your phone. Run it inside `tmux` so the session survives
+  your SSH window closing. If the T480s sleeps or `claude` exits, the remote view
+  ends too. It's tied to a Claude subscription (Pro works per Anthropic's
+  announcement). The exact command names have changed between versions, so if
+  these don't work, check `claude --help` or the Claude Code docs.
 
 ---
 
@@ -319,6 +342,14 @@ Why `embdev` makes the last row acceptable: it can't `sudo`, can't read your
 files, and everything it touches is in git and on GitHub. The worst case is
 "re-clone the project" or, at very worst, "re-run the setup scripts".
 
+**Be clear about what the allowlist is.** It saves you from clicking "yes" 200
+times. It is **not** a security wall. `make` runs whatever the Makefile says, and
+`pytest` runs whatever Python the agent puts in `test/bench/`, and the agent can
+edit both. The things that actually protect you are: the agent runs as `embdev`
+(no sudo, your files locked away), the project is in git, and secrets never go on
+that machine except throw-away bench credentials. That's also why the template's
+`secrets.h` holds only the `embtest` hotspot password, never your home Wi-Fi.
+
 If you want the video's shortcut, add this to embdev's `~/.bashrc`:
 
 ```bash
@@ -376,6 +407,20 @@ Video 3's key insight applies fully: **negative tests** (Wi-Fi gone, broker down
 garbage input) are where automation pays off. You would never test those by hand
 after every change, and now you don't have to.
 
+**`make trace` ties it together.** It reads the FSD's requirements table, checks
+that every test named there exists, and shows the last result of each:
+
+```
+| REQ-010 | host   | PASS    | mbus_decode_e450, mbus_crc_bad   | Decodes E450 frames ... |
+| REQ-020 | target | NOT RUN | no result yet: T-NVS             | Stores credentials ...  |
+| REQ-030 | bench  | NO TEST | no bench test named test_req_030_*| Reconnects after ...   |
+```
+
+`NO TEST` means "specified but not proven", the to-do list. `/build-loop`
+won't tick a plan item until `make trace RUN=1 REQS="…"` says `TRACE:OK`, and
+`/wrap-up` saves the table as `docs/STATUS.md`. That table is your answer to "is
+it done?". Read it and the FSD; you don't need to read the code.
+
 ---
 
 ## 9. Where to go next (when the basics feel boring)
@@ -401,6 +446,12 @@ after every change, and now you don't have to.
   `make`.
 - **A VM on the Legion** is possible (16 GB RAM), but USB passthrough for
   flashing is fiddly on Windows. The T480s is the better dev box.
+- **Let GitHub compile (video 3's trick).** Once a project is on GitHub, every
+  push builds the firmware in CI. `make ci-fw` downloads the binaries CI built
+  for the current commit, and `make upload` flashes them, with no local compile.
+  It's handy when the T480s is busy or for an ESP-IDF project whose toolchain
+  you'd rather not install. For the everyday Arduino loop a local
+  `make compile` is faster, because it doesn't wait for the push and the CI queue.
 
 ---
 

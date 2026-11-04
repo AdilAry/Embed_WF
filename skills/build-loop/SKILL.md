@@ -21,6 +21,7 @@ for each plan item in the phase:
     make bench-test  (only for bench-tier REQs)
     on failure: read the output + build/serial.log, form ONE hypothesis,
                 add targeted Serial.printf("[subsystem] ...") if unsure, fix, rerun
+    make trace RUN=1 REQS="<the item's REQ IDs>"   -> must print TRACE:OK
     tick the item in docs/PLAN.md, git commit -m "REQ-xxx: <what>"
 ```
 
@@ -42,6 +43,6 @@ for each plan item in the phase:
 
 ## When the phase is green
 
-Print a short report: items done (REQ IDs), tests added per tier, total pass counts from the last
-run, binary size, anything the owner should test by hand (manual/field REQs), and the next phase.
+Run `make trace` and include its summary line. Print a short report: items done (REQ IDs), tests
+added per tier, total pass counts from the last run, binary size, anything the owner should test by hand (manual/field REQs), and the next phase.
 Ask whether to push to GitHub.

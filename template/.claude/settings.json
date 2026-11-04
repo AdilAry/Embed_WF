@@ -5,6 +5,7 @@
       "Bash(make:*)",
       "Bash(arduino-cli:*)",
       "Bash(python3 tools/esp_serial.py:*)",
+      "Bash(python3 tools/trace.py:*)",
       "Bash(python3 -m pytest:*)",
       "Bash(bench-wifi:*)",
       "Bash(bench-mqtt:*)",
@@ -15,13 +16,15 @@
       "Bash(git log:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(ls:*)",
-      "Bash(cat:*)",
-      "Bash(grep:*)"
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run watch:*)",
+      "Bash(gh run download:*)"
     ],
     "deny": [
       "Bash(sudo:*)",
       "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
       "Read(./firmware/src/secrets.h)",
       "Read(./.env)"
     ]

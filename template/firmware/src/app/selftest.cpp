@@ -14,6 +14,10 @@ namespace {
 
 int g_pass = 0;
 int g_fail = 0;
+uint32_t g_bootMs = 0;
+
+// REQ-001 in the template FSD: main screen within 3 s of power-up.
+constexpr uint32_t kMaxBootMs = 3000;
 
 void report(const char* id, bool ok, const char* fmt, ...) {
   char detail[96];
@@ -27,9 +31,15 @@ void report(const char* id, bool ok, const char* fmt, ...) {
 
 }  // namespace
 
+void setBootMs(uint32_t ms) { g_bootMs = ms; }
+
 int runAll() {
   g_pass = g_fail = 0;
   Serial.println("SELFTEST:BEGIN");
+
+  // T-BOOT: setup() finished (screen drawn, touch detected) quickly enough.
+  report("T-BOOT", g_bootMs > 0 && g_bootMs <= kMaxBootMs, "boot_ms=%lu max=%lu",
+         (unsigned long)g_bootMs, (unsigned long)kMaxBootMs);
 
   // T-PSRAM: proves Tools > PSRAM = OPI was set (8 MB octal PSRAM on N4R8).
   const uint32_t psram = ESP.getPsramSize();

@@ -31,12 +31,23 @@ Each requirement is testable. **Tier** = the fastest place it can be proven:
 `host` (PC logic test) · `target` (on-board selftest) · `bench` (board + dev-box
 Wi-Fi/MQTT/BLE) · `field` (real environment, manual) · `manual` (a human looks).
 
+The **Test** column names the test(s) that prove the requirement: host test names
+(`TEST(name)`, wildcards allowed: `wrap_*`), target IDs (`T-XXX`) or bench pytest
+functions (`test_req_020_*`). Separate several with commas. `make trace` checks
+that each one exists and shows its last result.
+
 | ID | Requirement | Tier | Test |
 |---|---|---|---|
 | REQ-001 | On power-up the device shows the main screen within 3 s. | target | T-BOOT |
-| REQ-002 | Text longer than one line wraps at word boundaries and never runs off-screen. | host | wrap_* |
+| REQ-002 | Text longer than one line wraps at word boundaries and never runs off-screen. | host | wrap_*, max_chars_for_width |
 | REQ-003 | The device works on both the R and C touch variants. | target | T-TOUCH |
+| REQ-004 | Serial console commands are parsed case-insensitively; malformed numbers are rejected. | host | cmd_*, parse_long_* |
+| REQ-005 | The board runs with the right flash/PSRAM settings, enough free heap and a working display. | target | T-PSRAM, T-FLASH, T-HEAP, T-DISPLAY, T-WRAP |
+| REQ-006 | The console answers over USB and rejects unknown commands with `ERR`. | bench | test_console_ping, test_info_reports_healthy_boot, test_text_command_accepted, test_unknown_command_is_rejected |
 | REQ-… | | | |
+
+REQ-001…006 are the template's baseline (the plumbing every project inherits).
+Keep them unless you remove that feature. Project requirements start at REQ-010.
 
 ### 4.1 Error handling & fault cases
 

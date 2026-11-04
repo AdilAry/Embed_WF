@@ -8,9 +8,14 @@
 // Keep IDs stable: docs/FSD.md refers to them in its verification column.
 #pragma once
 
+#include <stdint.h>
+
 namespace selftest {
 
 // Runs every test, prints the lines above, returns the number of failures.
 int runAll();
+
+// Called once at the end of setup() with millis() at that moment (for T-BOOT).
+void setBootMs(uint32_t ms);
 
 }  // namespace selftest

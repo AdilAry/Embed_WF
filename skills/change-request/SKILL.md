@@ -15,5 +15,6 @@ Requested change: $ARGUMENTS
 3. Apply it: edit `docs/FSD.md`, bump the minor version, add a change-log row (date, summary,
    REQ IDs). Never reuse a removed REQ ID.
 4. Add a new phase (or items) to `docs/PLAN.md` referencing the REQ IDs.
-5. Commit `"FSD vX.Y: <summary>"`.
+5. `make trace`: the new/changed requirements show `NO TEST` or `NOT RUN`; nothing else should
+   change status. Commit `"FSD vX.Y: <summary>"`.
 6. Continue with the `/build-loop` procedure for the new items.

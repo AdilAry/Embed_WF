@@ -50,6 +50,9 @@ test. That's the system working.)
 - `make boot-check` resets the board and confirms a clean boot. If it misses the
   `BOOT:OK` line (the S3's USB port drops out during reset), it asks the device
   for `info` and checks that the last reset reason wasn't a panic or watchdog.
+  Either way it then keeps listening for a few seconds (`--settle`, default 4 s).
+  A firmware that crashes or reboots right after printing `BOOT:OK` (for
+  example when Wi-Fi starts) counts as a failed boot, not a green one.
 - Add one `report("T-XXXX", ok, "...")` per target-tier requirement and put the
   ID in the FSD's Test column.
 
@@ -93,6 +96,38 @@ Other things the T480s bench can do:
 | Broker outage | `bench-mqtt stop` … `bench-mqtt start` |
 | BLE advertising | `bench-ble-scan --name MyDevice` |
 | GPIO / buttons | not available on a laptop; use a second ESP32 as a "stimulus board" over USB serial, or a Pi later |
+
+## Traceability: which requirement is proven by what
+
+`make trace` (`tools/trace.py`) joins the three things that matter:
+
+1. the FSD's requirements table (`REQ-xxx`, tier, test names),
+2. the tests that actually exist (`TEST(name)` in `test/host/`, `report("T-XXX")`
+   in the firmware, `def test_xxx` in `test/bench/`),
+3. the last result of each tier, which the make targets save in `build/`
+   (`host-test.log`, `target-test.log`, `bench-test.xml`).
+
+| Status | Meaning | What to do |
+|---|---|---|
+| PASS | every test for it passed on its last run | nothing |
+| FAIL | at least one of its tests failed last time | fix the code (or, with your OK, the test/FSD) |
+| NOT RUN | tests exist but haven't run on this machine (board not connected?) | run that tier |
+| SKIPPED | bench test skipped (no board, no hotspot) | fix the bench, rerun |
+| NO TEST | the FSD names a test that doesn't exist | write it; this is the to-do list |
+| MANUAL | field/manual tier | your checklist in FSD §8 |
+
+`make trace` alone only reports. `STRICT=1` fails on NO TEST or FAIL (CI uses this
+for the template). `RUN=1 REQS="REQ-010 REQ-020"` also fails on NOT RUN, which is
+what `/build-loop` uses before it ticks a plan item.
+
+Known limits, so you're not misled by green:
+- Results are "last run on this machine", not "on this exact code". `make loop`
+  right before reading the table makes them current.
+- `target-test.log` holds the board that was plugged in last. REQ-003 (works on R
+  **and** C) needs a run on each. `/commission` does both, but the table only
+  remembers the last.
+- A PASS is only as good as the test. Now and then, ask the agent to break the
+  code on purpose and show you the test going red.
 
 ## Tier 4 — field and manual
 

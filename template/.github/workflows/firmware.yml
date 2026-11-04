@@ -18,6 +18,11 @@ jobs:
       - name: Host tests (tier 1)
         run: make host-test
 
+      # Requirement -> test matrix on the run's summary page. Report only: during
+      # development some requirements legitimately have no test yet.
+      - name: Requirement traceability
+        run: python3 tools/trace.py --out "$GITHUB_STEP_SUMMARY"
+
       - uses: arduino/setup-arduino-cli@v2
 
       - name: Cache Arduino core + libraries

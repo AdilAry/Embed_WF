@@ -13,9 +13,17 @@
 Desktop (chat, planning, spec reviews), VS Code with Remote-SSH into the dev box,
 the GitHub website. The AI agent does **not** run here with broad permissions.
 
-Note: Windows 10's consumer support has ended. Another good reason to keep the
-autonomous agent and its downloads off this machine. Arduino IDE still works
-here for quick manual experiments.
+Note: Windows 10 is out of support. The free EU Extended Security Updates year
+for consumers ended in October 2026, so this machine no longer gets security
+patches. That's another good reason to keep the autonomous agent and its
+downloads off it. The i5-9300H (9th gen Intel) is on Microsoft's Windows 11 CPU
+list, so a free Windows 11 upgrade should be possible. Confirm with the *PC
+Health Check* app (it also checks TPM 2.0 / Intel PTT and Secure Boot in the BIOS).
+Repasted, with 16 GB, it has plenty of life left as the cockpit.
+
+Claude Desktop runs here. Its Code tab can also drive Claude Code **on the
+T480s** over SSH (GUIDE §3, step 6). The agent still runs on the T480s.
+Arduino IDE still works here for quick manual experiments.
 
 ## ThinkPad T480s (test laptop) — the dev box + test bench
 
@@ -37,8 +45,11 @@ an MQTT broker (`bench-mqtt`), and BLE scanning (`bench-ble-scan`).
 - Internet must come over **Ethernet** while the Wi-Fi card is the test hotspot.
 - 8 GB RAM is fine for one or two parallel Claude sessions with arduino-cli.
   ESP-IDF builds are heavier; close other apps or build in CI.
-- Single-channel RAM costs some speed, which hardly matters here. A second
-  8 GB stick (DDR4-2666 SODIMM) is a cheap upgrade if you ever want it.
+- Single-channel RAM costs some speed, which hardly matters here. As far as I
+  know the T480s has memory soldered to the board plus **one** SODIMM slot.
+  `sudo dmidecode -t memory` shows what's fitted where. If the slot is empty, an
+  8 GB DDR4-2666 SODIMM gives 16 GB and dual channel. That's a cheap upgrade if
+  you ever run ESP-IDF builds locally.
 - Keep it on AC with lid-close set to "Do nothing".
 
 ## Boards

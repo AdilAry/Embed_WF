@@ -11,7 +11,8 @@ namespace {
 
 // Shared pins
 constexpr int kIrq = 3;  // active-low on both variants
-constexpr int kPin38 = 38;  // XPT2046 CS on R, GT911 RESET on C - don't touch until detected
+constexpr int kPin38 = 38;  // XPT2046 CS on R, GT911 RESET on C - only driven after
+                            // the first I2C probe (see gt911ResetSelect5D)
 
 // R: XPT2046 bit-banged SPI (shares 11/12/13 with the SD card, see board file)
 constexpr int kSck = 12;
@@ -112,14 +113,43 @@ bool gtReadRaw(int& rx, int& ry) {
   return got;
 }
 
-bool probeGt911() {
-  Wire.begin(kSda, kScl, 400000);
+bool probeGt911Addrs() {
   for (uint8_t a : {static_cast<uint8_t>(0x5D), static_cast<uint8_t>(0x14)}) {
     Wire.beginTransmission(a);
     if (Wire.endTransmission() == 0) {
       g_gtAddr = a;
       return true;
     }
+  }
+  return false;
+}
+
+// GT911 power-on sequence from its datasheet, selecting I2C address 0x5D:
+// hold INT low while RESET rises, keep INT low ~50 ms, then release INT.
+// Only used when the plain probe finds nothing (e.g. the controller came up
+// confused or its reset line floats). On an R board the same pins are XPT2046
+// CS (38, driven low then high: harmless) and PENIRQ (3, an open-drain output:
+// driving it low briefly is harmless), and xptInit() reconfigures both after.
+void gt911ResetSelect5D() {
+  pinMode(kIrq, OUTPUT);
+  pinMode(kPin38, OUTPUT);
+  digitalWrite(kIrq, LOW);
+  digitalWrite(kPin38, LOW);
+  delay(11);
+  digitalWrite(kPin38, HIGH);
+  delay(55);
+  pinMode(kIrq, INPUT);  // the GT911 drives INT from now on
+  delay(10);
+}
+
+bool probeGt911() {
+  Wire.begin(kSda, kScl, 400000);
+  if (probeGt911Addrs()) return true;
+  Serial.println("[touch] no GT911 on first probe, trying its reset sequence");
+  gt911ResetSelect5D();
+  if (probeGt911Addrs()) {
+    Serial.println("[touch] GT911 answered after reset");
+    return true;
   }
   Wire.end();  // release 8/4 on the R board
   return false;

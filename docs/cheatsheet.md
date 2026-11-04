@@ -38,6 +38,9 @@ make bench-test    tier 3, pytest
 make loop          host → compile → upload → boot-check → target
 make info          one-line device status
 make monitor SECS=30
+make trace         requirement -> test -> last result table
+make trace RUN=1 REQS="REQ-010 REQ-020"   must say TRACE:OK before ticking a plan item
+make ci-fw         download the firmware CI built for this commit (then make upload)
 ```
 
 ## Serial console (115200 baud)
@@ -67,6 +70,8 @@ bench-ble-scan [--name X] [-s 10]
 - "Add a host test for the case where the sensor returns 0xFFFF."
 - "Explain what `src/hal/touch.cpp` does like I'm new to embedded."
 - "What would you test that the FSD doesn't cover yet?"
+- "Show me `make trace` and explain every line that isn't PASS."
+- "Break the wrap logic on purpose and show me the test catches it, then undo it."
 - "Update the docs, commit and push."
 
 ## Claude Code keys / commands

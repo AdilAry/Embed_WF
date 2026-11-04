@@ -8,7 +8,8 @@ Built for: a Claude Pro subscription, a Windows laptop to supervise from, an old
 Linux Mint laptop as the agent's sandbox and test bench, and Guition JC4827W543
 (ESP32-S3, 4.3" touch) boards in both the resistive and capacitive variants.
 
-**Start here → [docs/GUIDE.md](docs/GUIDE.md)**
+**Start here → [docs/GUIDE.md](docs/GUIDE.md)** · What changed in the review →
+[docs/REVIEW.md](docs/REVIEW.md)
 
 | | |
 |---|---|
@@ -16,8 +17,10 @@ Linux Mint laptop as the agent's sandbox and test bench, and Guition JC4827W543
 | [docs/cheatsheet.md](docs/cheatsheet.md) | Daily commands and prompts |
 | [docs/testing.md](docs/testing.md) | The four test tiers: host → target → bench → field |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | When something doesn't work |
+| [docs/claude-desktop-project.md](docs/claude-desktop-project.md) | Set up Claude Desktop as the planning side of the workflow |
+| [docs/REVIEW.md](docs/REVIEW.md) | Review of the first version: findings, fixes, what still needs your boards |
 | [hardware/](hardware/) | Your machines and the board reference |
-| [template/](template/) | Starter project: working firmware, tests, serial tool, CI |
+| [template/](template/) | Starter project: working firmware, tests, serial tool, requirement tracing (`make trace`), CI |
 | [skills/](skills/) | Claude Code skills: `/define` `/commission` `/build-loop` `/datasheet` `/change-request` `/wrap-up` `/new-project` |
 | [devbox/](devbox/) | Setup scripts for the Linux dev box |
 | [bench/](bench/) | Test-bench commands: Wi-Fi hotspot, MQTT broker, BLE scan |
@@ -43,6 +46,7 @@ Then type `/commission` in Claude Code.
 | Part | State |
 |---|---|
 | Host tests, serial tool, project generator | tested |
+| Requirement tracing (`make trace`), serial-tool crash/boot parsing | unit-tested in CI (`tests/`) |
 | Firmware compile | checked by CI on every push (`template` workflow) |
 | On-board run, R board (XPT2046) | display/touch code taken from your proven sketch; first full run happens at your first `/commission` |
 | On-board run, C board (GT911) | **unverified**, so it gets checked and fixed during your first `/commission` |

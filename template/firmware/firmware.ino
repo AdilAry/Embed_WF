@@ -73,8 +73,10 @@ void setup() {
     display::setBacklight(BACKLIGHT_DEFAULT);
   }
 
-  Serial.printf("BOOT:OK fw=%s ver=%s display=%d touch=%s\n", FW_NAME, FW_VERSION,
-                display::ok() ? 1 : 0, touch::typeName());
+  const uint32_t bootMs = millis();
+  selftest::setBootMs(bootMs);
+  Serial.printf("BOOT:OK fw=%s ver=%s display=%d touch=%s boot_ms=%lu\n", FW_NAME, FW_VERSION,
+                display::ok() ? 1 : 0, touch::typeName(), (unsigned long)bootMs);
 }
 
 void loop() {

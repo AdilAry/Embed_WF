@@ -17,17 +17,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Board reference copy is in sync
         run: diff -u ../hardware/boards/guition-jc4827w543.md docs/hardware/guition-jc4827w543.md
 
       - name: Python tools compile
-        run: python3 -m py_compile tools/esp_serial.py test/bench/*.py ../bench/bench-ble-scan
+        run: python3 -m py_compile tools/esp_serial.py tools/trace.py test/bench/*.py ../bench/bench-ble-scan
+
+      - name: Tool tests (serial tool parsing, traceability)
+        run: |
+          python3 -m pip install --quiet pytest pyserial
+          python3 -m pytest -q ../tests
 
       - name: Shell scripts parse
         run: for f in ../devbox/*.sh ../tools/*.sh ../bench/bench-wifi ../bench/bench-mqtt; do bash -n "$f"; done
 
       - name: Host tests (tier 1)
         run: make host-test
+
+      - name: Every template requirement points at a real test
+        run: python3 tools/trace.py --strict --out "$GITHUB_STEP_SUMMARY"
 
       - uses: arduino/setup-arduino-cli@v2
 

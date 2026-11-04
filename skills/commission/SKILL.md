@@ -18,7 +18,7 @@ to do physically.
    and that `id` shows the `dialout` group (log out/in after setup).
 5. **Flash + boot**: `make upload` then `make boot-check`. If upload fails to connect, ask the owner
    for the BOOT/RESET sequence (hold BOOT, tap RESET, release BOOT) and retry once.
-6. **Target tests**: `make target-test`. All must pass. Record the `info` line (`make info`),
+6. **Target tests**: `make target-test`. All must pass (including `T-BOOT`: setup done in < 3 s). Record the `info` line (`make info`),
    especially `touch=` — it tells you which variant (R = xpt2046, C = gt911) is plugged in.
 7. **Second variant**: ask the owner to swap to the other board (R ↔ C), then repeat 5–6.
    The GT911 (C) code is unverified — if T-TOUCH or touch coordinates are wrong on C, fix it now
@@ -29,7 +29,9 @@ to do physically.
 9. **Bench** (only if the FSD has `bench` requirements): `bench-wifi status`/`up` (Ethernet must
    be connected — the script refuses otherwise), `bench-mqtt start`, `bench-mqtt status`,
    `bench-ble-scan -s 5` if BLE is used. Then `make bench-test`.
-10. **CI**: if the repo is on GitHub, `git push` (ask first) and check with `gh run list -L 1` /
+10. **Traceability**: `make trace`. The baseline requirements REQ-001…005 must show `PASS`
+    (REQ-006 too if you ran `make bench-test`).
+11. **CI**: if the repo is on GitHub, `git push` (ask first) and check with `gh run list -L 1` /
     `gh run watch` that the `firmware` workflow is green.
 
 Finish: tick Phase 0 items in `docs/PLAN.md`, add a dated commissioning entry to `docs/NOTES.md`,

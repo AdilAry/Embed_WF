@@ -56,7 +56,7 @@ def _have(cmd: str) -> bool:
 def wifi_ap():
     """Bring the dev box test hotspot up for one test, then down again."""
     if not _have("bench-wifi"):
-        pytest.skip("bench-wifi not installed (run Embed_WF/devbox/setup.sh)")
+        pytest.skip("bench-wifi not installed (run Embed_WF/devbox/setup-user.sh)")
     subprocess.run(["bench-wifi", "up"], check=True)
     yield
     subprocess.run(["bench-wifi", "down"], check=False)
@@ -66,7 +66,7 @@ def wifi_ap():
 def mqtt_broker():
     """Local Mosquitto on the dev box; tests may stop it to inject faults."""
     if not _have("bench-mqtt"):
-        pytest.skip("bench-mqtt not installed (run Embed_WF/devbox/setup.sh)")
+        pytest.skip("bench-mqtt not installed (run Embed_WF/devbox/setup-user.sh)")
     subprocess.run(["bench-mqtt", "start"], check=True)
     yield
     subprocess.run(["bench-mqtt", "stop"], check=False)

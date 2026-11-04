@@ -42,6 +42,8 @@ up() {
   nmcli connection down "$CONN" >/dev/null 2>&1 || true
   nmcli device wifi hotspot ifname "$ifc" con-name "$CONN" ssid "$SSID" \
     password "$PASS" band bg channel "$CHANNEL" >/dev/null
+  # Never bring the test network up by itself after a reboot.
+  nmcli connection modify "$CONN" connection.autoconnect no >/dev/null 2>&1 || true
   echo "bench-wifi: UP ssid=$SSID channel=$CHANNEL iface=$ifc gateway=10.42.0.1"
 }
 

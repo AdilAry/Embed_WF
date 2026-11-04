@@ -14,7 +14,7 @@ command here has a timeout and returns an exit code, so it fits in a loop:
 Exit codes: 0 ok | 1 test/fail-pattern hit | 2 timeout | 3 port problem | 4 usage
 Everything received is also appended to build/serial.log (override with --log).
 
-Needs pyserial (`pip install pyserial`, already done by devbox/setup.sh).
+Needs pyserial (installed by Embed_WF/devbox/setup-root.sh as python3-serial).
 """
 
 from __future__ import annotations
@@ -28,18 +28,66 @@ from pathlib import Path
 try:
     import serial
     from serial.tools import list_ports
-except ImportError:  # pragma: no cover
-    print("pyserial missing: pip install pyserial", file=sys.stderr)
-    sys.exit(3)
+except ImportError:  # pragma: no cover - lets the pure helpers be imported by tests
+    serial = None  # type: ignore[assignment]
+    list_ports = None  # type: ignore[assignment]
 
 ESPRESSIF_VID = 0x303A  # native USB (ESP32-S3/C3 USB-Serial-JTAG)
 USB_UART_VIDS = {0x10C4, 0x1A86, 0x0403}  # CP210x, CH340, FTDI on other dev boards
-DEFAULT_FAIL = r"Guru Meditation|abort\(\) was called|Backtrace:|Brownout detector|rst:0x[0-9a-f]+ \((?:TG|RTC)WDT"
+# Lines that mean "the firmware crashed". Covers the ESP-IDF panic handler, asserts,
+# stack overflows, the task watchdog and the ROM's reset-reason line after a
+# watchdog or brownout reset (e.g. "rst:0x8 (TG1WDT_SYS_RST)" on the S3).
+CRASH_PATTERNS = [
+    r"Guru Meditation Error",
+    r"abort\(\) was called",
+    r"Backtrace:",
+    r"Brownout detector",
+    r"Stack canary watchpoint triggered",
+    r"\*\*\*ERROR\*\*\* A stack overflow",
+    r"Task watchdog got triggered",
+    r"assert failed:",
+    r"rst:0x[0-9a-f]+ \((?:TG\d?WDT|RTCWDT|RTC_WDT|SUPER_WDT|MWDT\d?|LP_WDT|BROWN_OUT)",
+]
+DEFAULT_FAIL = "|".join(CRASH_PATTERNS)
+BAD_RESET_REASONS = {"panic", "int_wdt", "task_wdt", "wdt", "brownout"}
 
 EXIT_OK, EXIT_FAIL, EXIT_TIMEOUT, EXIT_PORT, EXIT_USAGE = 0, 1, 2, 3, 4
 
+_CRASH_RE = re.compile(DEFAULT_FAIL)
+_DONE_RE = re.compile(r"SELFTEST:DONE pass=(\d+) fail=(\d+)")
+
+
+def is_crash(line: str) -> bool:
+    """True if a serial line is a crash / watchdog / brownout signature."""
+    return bool(_CRASH_RE.search(line))
+
+
+def parse_kv(line: str) -> dict[str, str]:
+    """'INFO fw=x reset=poweron heap=1' -> {'fw': 'x', 'reset': 'poweron', 'heap': '1'}."""
+    return dict(kv.split("=", 1) for kv in line.split()[1:] if "=" in kv)
+
+
+def parse_selftest(lines) -> tuple[int, int, list[str]] | None:
+    """Summarise selftest output. Returns (passed, failed, FAIL lines), or None if
+    SELFTEST:DONE never appeared. A FAIL line wins over a DONE line claiming fail=0."""
+    failures = [ln for ln in lines if ln.startswith("TEST:") and ":FAIL:" in ln]
+    for ln in lines:
+        m = _DONE_RE.search(ln)
+        if m:
+            passed, failed = int(m.group(1)), int(m.group(2))
+            return passed, max(failed, len(failures)), failures
+    return None
+
+
+def _need_pyserial() -> None:
+    if serial is None:
+        print("pyserial missing: sudo apt install python3-serial  (or pip install pyserial)",
+              file=sys.stderr)
+        sys.exit(EXIT_PORT)
+
 
 def find_port() -> str | None:
+    _need_pyserial()
     ports = list(list_ports.comports())
     for vids in ({ESPRESSIF_VID}, USB_UART_VIDS):
         for p in ports:
@@ -142,6 +190,7 @@ def cmd_detect(_args) -> int:
 
 
 def cmd_list(_args) -> int:
+    _need_pyserial()
     for p in list_ports.comports():
         vid = f"{p.vid:04X}" if p.vid is not None else "----"
         pid = f"{p.pid:04X}" if p.pid is not None else "----"
@@ -150,6 +199,7 @@ def cmd_list(_args) -> int:
 
 
 def _connect(args) -> Link | None:
+    _need_pyserial()
     link = Link(args.port, args.baud, Path(args.log))
     if not link.open(args.wait_port):
         print(f"could not open serial port ({args.port or 'auto-detect'})", file=sys.stderr)
@@ -205,11 +255,11 @@ def cmd_cmd(args) -> int:
         return EXIT_TIMEOUT
     link.write_line(" ".join(args.command))
     until = re.compile(args.until) if args.until else None
-    fail = re.compile(DEFAULT_FAIL)
     deadline = time.monotonic() + args.seconds
     for line in link.lines(deadline):
         print(line, flush=True)
-        if fail.search(line):
+        if is_crash(line):
+            print(f"[esp_serial] CRASH signature: {line}", file=sys.stderr)
             return EXIT_FAIL
         if until and until.search(line):
             return EXIT_OK
@@ -224,26 +274,39 @@ def cmd_selftest(args) -> int:
         print("[esp_serial] device did not answer ping - is the firmware running?", file=sys.stderr)
         return EXIT_TIMEOUT
     link.write_line("selftest")
-    crash = re.compile(DEFAULT_FAIL)
-    done = re.compile(r"SELFTEST:DONE pass=(\d+) fail=(\d+)")
-    failures: list[str] = []
+    seen: list[str] = []
+    report = Path(args.report) if args.report else None
     deadline = time.monotonic() + args.seconds
+    result = None
     for line in link.lines(deadline):
         print(line, flush=True)
-        if crash.search(line):
+        if is_crash(line):
+            seen.append("SELFTEST:CRASH " + line)
+            _write_report(report, seen)
             print("[esp_serial] device crashed during selftest", file=sys.stderr)
             return EXIT_FAIL
-        if line.startswith("TEST:") and ":FAIL:" in line:
-            failures.append(line)
-        m = done.search(line)
-        if m:
-            passed, failed = int(m.group(1)), int(m.group(2))
-            print(f"[esp_serial] target tests: {passed} passed, {failed} failed")
-            for f in failures:
-                print(f"  {f}")
-            return EXIT_OK if failed == 0 else EXIT_FAIL
-    print("[esp_serial] TIMEOUT waiting for SELFTEST:DONE", file=sys.stderr)
-    return EXIT_TIMEOUT
+        if line.startswith(("TEST:", "SELFTEST:")):
+            seen.append(line)
+        result = parse_selftest(seen)
+        if result:
+            break
+    _write_report(report, seen)
+    if not result:
+        print("[esp_serial] TIMEOUT waiting for SELFTEST:DONE", file=sys.stderr)
+        return EXIT_TIMEOUT
+    passed, failed, failures = result
+    print(f"[esp_serial] target tests: {passed} passed, {failed} failed")
+    for f in failures:
+        print(f"  {f}")
+    return EXIT_OK if failed == 0 else EXIT_FAIL
+
+
+def _write_report(path: Path | None, lines: list[str]) -> None:
+    """Keep the last selftest result for tools/trace.py (overwritten each run)."""
+    if not path:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(ln + "\n" for ln in lines), encoding="utf-8")
 
 
 def cmd_bootcheck(args) -> int:
@@ -257,16 +320,14 @@ def cmd_bootcheck(args) -> int:
     if not link:
         return EXIT_PORT
     link.reset()
-    crash = re.compile(DEFAULT_FAIL)
     deadline = time.monotonic() + args.seconds
     for line in link.lines(deadline):
         print(line, flush=True)
-        if crash.search(line):
+        if is_crash(line):
             print("[esp_serial] BOOT FAILED: crash signature seen", file=sys.stderr)
             return EXIT_FAIL
         if "BOOT:OK" in line:
-            print("[esp_serial] boot ok (banner seen)")
-            return EXIT_OK
+            return _settle(link, args.settle)
     # Banner missed - ask the device directly.
     if not _wait_alive(link, args.alive_timeout):
         print("[esp_serial] BOOT FAILED: no BOOT:OK and no answer to ping", file=sys.stderr)
@@ -275,14 +336,30 @@ def cmd_bootcheck(args) -> int:
     for line in link.lines(time.monotonic() + 3):
         print(line, flush=True)
         if line.startswith("INFO "):
-            fields = dict(kv.split("=", 1) for kv in line.split()[1:] if "=" in kv)
+            fields = parse_kv(line)
             reason = fields.get("reset", "?")
-            if reason in ("panic", "int_wdt", "task_wdt", "wdt", "brownout"):
+            if reason in BAD_RESET_REASONS:
                 print(f"[esp_serial] BOOT FAILED: last reset reason = {reason}", file=sys.stderr)
                 return EXIT_FAIL
-            print(f"[esp_serial] boot ok (alive, reset={reason}, uptime_ms={fields.get('uptime_ms')})")
-            return EXIT_OK
+            print(f"[esp_serial] booted (alive, reset={reason}, uptime_ms={fields.get('uptime_ms')})")
+            return _settle(link, args.settle)
     return EXIT_TIMEOUT
+
+
+def _settle(link: Link, seconds: float) -> int:
+    """After a good boot, keep listening a little: a firmware that crashes 2 s after
+    BOOT:OK (Wi-Fi start, first sensor read, ...) must not count as a clean boot."""
+    deadline = time.monotonic() + seconds
+    for line in link.lines(deadline):
+        print(line, flush=True)
+        if is_crash(line):
+            print(f"[esp_serial] BOOT FAILED: crashed within {seconds:.0f}s of boot", file=sys.stderr)
+            return EXIT_FAIL
+        if "BOOT:OK" in line or line.startswith("[boot]"):
+            print("[esp_serial] BOOT FAILED: the board rebooted by itself (boot loop?)", file=sys.stderr)
+            return EXIT_FAIL
+    print(f"[esp_serial] boot ok (stable for {seconds:.0f}s)")
+    return EXIT_OK
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -313,11 +390,15 @@ def main(argv: list[str] | None = None) -> int:
     b = sub.add_parser("bootcheck", help="reset board and verify a clean boot")
     b.add_argument("-s", "--seconds", type=float, default=8.0, help="how long to wait for BOOT:OK")
     b.add_argument("--alive-timeout", type=float, default=10.0)
+    b.add_argument("--settle", type=float, default=4.0,
+                   help="seconds to keep watching for a crash/reboot after a good boot")
     b.set_defaults(fn=cmd_bootcheck)
 
     t = sub.add_parser("selftest", help="run on-target tests")
     t.add_argument("-s", "--seconds", type=float, default=30.0)
     t.add_argument("--alive-timeout", type=float, default=15.0)
+    t.add_argument("--report", default="build/target-test.log",
+                   help="write this run's TEST:/SELFTEST: lines here (read by tools/trace.py)")
     t.set_defaults(fn=cmd_selftest)
 
     args = ap.parse_args(argv)

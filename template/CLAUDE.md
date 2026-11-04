@@ -36,6 +36,8 @@ make bench-test    # tier 3, pytest
 make loop          # host-test -> compile -> upload -> boot-check -> target-test
 make info          # one-line device status
 make monitor SECS=30
+make trace         # FSD requirement -> test -> last result (RUN=1 REQS="REQ-010 ..." to enforce)
+make ci-fw         # fetch the firmware GitHub CI built for HEAD, then `make upload`
 ```
 
 Serial output from every tool call is appended to `build/serial.log`.
@@ -51,7 +53,9 @@ Serial output from every tool call is appended to `build/serial.log`.
 6. If a board is connected: `make upload && make boot-check && make target-test`, then
    `make bench-test` if the phase needs it. Read failures, add debug output
    (`Serial.printf("[subsystem] ...")`) if the cause is unclear, fix, repeat.
-7. When green: tick the item in `docs/PLAN.md`, note anything surprising in
+7. When green: run `make trace RUN=1 REQS="<the item's REQ IDs>"`. It must print
+   `TRACE:OK` (each of those requirements has a test, and the last run passed).
+   Then tick the item in `docs/PLAN.md`, note anything surprising in
    `docs/NOTES.md`, and `git commit` with a message naming the requirement IDs.
 8. Stop and ask the owner if: a requirement is ambiguous or contradicts another,
    a test needs physical action (press a button, swap a cable, change board),
@@ -63,7 +67,12 @@ Serial output from every tool call is appended to `build/serial.log`.
 - Never weaken, skip, or delete a test to make the loop green. If a test is wrong, say why and ask.
 - Follow §10 "Rules for Claude on this board" in the board file.
 - Every new target test gets a stable ID (`T-XXXX`) printed as `TEST:<id>:PASS|FAIL:<detail>`
-  and is referenced from the FSD verification column.
+  and is referenced from the FSD Test column. Same for host test names and bench test
+  functions: `make trace` only counts tests the FSD names.
+- A test must be able to fail. Check it by breaking the code once (or reasoning it through)
+  before trusting a new test; a test written to match buggy code proves nothing.
+- `.claude/settings.json` lets build/test/bench commands run without asking. That is for
+  convenience, not security: the real safety boundary is the unprivileged `embdev` user.
 - Keep `src/logic/` free of Arduino/ESP-IDF headers.
 - Never put credentials in tracked files. Use `firmware/src/secrets.h` (git-ignored).
 - Never test against the owner's home Wi-Fi or production MQTT. Use `bench-wifi` / `bench-mqtt`.

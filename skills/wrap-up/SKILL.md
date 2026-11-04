@@ -16,5 +16,7 @@ disable-model-invocation: true
 3. Board-wide lessons (a pin quirk, a library bug, a proven init sequence): show the owner the text
    and suggest adding it to `~/Embed_WF/hardware/boards/guition-jc4827w543.md` (and committing there).
 4. `make check` must be green. If it isn't, say so and don't push.
+   Then `python3 tools/trace.py --out docs/STATUS.md` to refresh the requirement status page
+   (it reflects the last run of each tier; say so if target/bench weren't run this session).
 5. Commit `"Docs: session wrap-up"` and `git push`. Then `gh run list -L 1` to show CI status.
-6. Give the owner a 5-line summary: done, test counts, CI status, next step, anything needing their hands.
+6. Give the owner a 5-line summary: done, test counts, trace summary line, CI status, next step, anything needing their hands.

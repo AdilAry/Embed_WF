@@ -12,8 +12,9 @@ well-commented scripts over clever ones.
 - `hardware/boards/*.md` — board references, the shared knowledge across projects.
   `template/docs/hardware/` holds a **copy** that CI checks is identical; edit
   `hardware/boards/` and copy it over.
-- `template/` — starter project. Must always pass `make host-test` and `make compile`
-  (the `template` GitHub workflow enforces this).
+- `template/` — starter project. Must always pass `make host-test`, `make compile` and
+  `python3 tools/trace.py --strict` (the `template` GitHub workflow enforces this).
+- `tests/` — pytest tests for `template/tools/*.py`. Run `python3 -m pytest -q tests`.
 - `skills/<name>/SKILL.md` — Claude Code skills, symlinked into `~/.claude/skills` by
   `devbox/setup-user.sh`.
 - `devbox/` — Mint setup scripts (root part / user part). Must stay idempotent.

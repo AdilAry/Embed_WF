@@ -30,7 +30,7 @@ HOST_CXX    ?= g++
 HOST_FLAGS  := -std=c++17 -Wall -Wextra -Werror -O1 -g -Ifirmware/src -Itest/host
 HOST_SRCS   := $(wildcard firmware/src/logic/*.cpp) $(wildcard test/host/*.cpp)
 
-.PHONY: help deps host-test compile upload monitor boot-check ping info target-test bench-test check loop size clean
+.PHONY: help deps host-test compile upload monitor boot-check ping info target-test bench-test check loop size clean trace ci-fw
 
 help:
 	@echo "make deps         install ESP32 core + libraries (once per machine)"
@@ -44,16 +44,19 @@ help:
 	@echo "make target-test  tier 2: run on-board selftest"
 	@echo "make bench-test   tier 3: pytest bench tests (Wi-Fi, MQTT, BLE ...)"
 	@echo "make loop         host-test -> compile -> upload -> boot-check -> target-test"
+	@echo "make trace        requirement -> test -> last result matrix (STRICT=1 / RUN=1 to enforce)"
+	@echo "make ci-fw        download the firmware GitHub CI built for HEAD (instead of compiling)"
 
 deps:
 	arduino-cli core update-index --additional-urls $(ESP32_INDEX)
 	arduino-cli core install esp32:esp32@$(ESP32_CORE_VERSION) --additional-urls $(ESP32_INDEX)
 	arduino-cli lib install $(LIBS)
 
+# The result of the last run of each tier is kept in build/ for `make trace`.
 host-test:
 	@mkdir -p $(BUILD)
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_SRCS) -o $(BUILD)/host_tests
-	./$(BUILD)/host_tests
+	@./$(BUILD)/host_tests > $(BUILD)/host-test.log; rc=$$?; cat $(BUILD)/host-test.log; exit $$rc
 
 compile:
 	arduino-cli compile --fqbn $(FQBN) --warnings default \
@@ -85,10 +88,26 @@ target-test:
 	$(SERIAL) selftest
 
 bench-test:
-	$(PY) -m pytest -v test/bench
+	@mkdir -p $(BUILD)
+	$(PY) -m pytest -v --junitxml=$(BUILD)/bench-test.xml test/bench
 
 loop: host-test compile upload boot-check target-test
 	@echo "LOOP:GREEN all tiers up to target passed"
+
+# Requirement traceability (tools/trace.py). Plain `make trace` only reports.
+#   STRICT=1  fail if a requirement has no test or a test failed
+#   RUN=1     also fail on tests that have not been run (use at the end of a phase)
+#   REQS="REQ-010 REQ-020"  only those requirements
+trace:
+	$(PY) tools/trace.py $(if $(RUN),--require-run,$(if $(STRICT),--strict)) $(REQS)
+
+# Video 3's trick: let GitHub Actions compile, and only flash on the dev box.
+# Needs `gh auth login`, the commit pushed, and its `firmware` workflow finished.
+ci-fw:
+	@mkdir -p $(BUILD)/fw
+	gh run download --name firmware-$$(git rev-parse HEAD) --dir $(BUILD)/fw
+	@ls -l $(BUILD)/fw
+	@echo "Now: make upload"
 
 clean:
 	rm -rf $(BUILD)

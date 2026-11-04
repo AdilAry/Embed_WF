@@ -34,6 +34,10 @@ testable and names the fastest test tier that can prove it**.
 4. Write `docs/FSD.md`:
    - Requirements table: `REQ-xxx` IDs (step by 10 so later ones can be inserted), one testable
      sentence each, Tier (`host` / `target` / `bench` / `field` / `manual`), Test name.
+     Keep the template's baseline rows REQ-001…006 unless the owner drops that feature.
+   - Name the tests now, even though they don't exist yet: host `snake_case` names (wildcards
+     like `mbus_*` allowed), target `T-XXXX` IDs, bench `test_req_<nnn>_<what>` functions.
+     No `|` inside a table cell (it breaks the table).
    - Prefer `host` for anything that is pure logic (parsing, formatting, state machines, maths) —
      that tells the implementation to put it in `firmware/src/logic/`.
    - Include negative / fault-injection requirements (§4.1). They are as important as happy paths.
@@ -48,7 +52,9 @@ testable and names the fastest test tier that can prove it**.
    small phases (each finishable in one session, each ending with green tests). Every plan item
    names the REQ IDs it covers.
 
-7. `git add docs && git commit -m "FSD v0.1 and plan"`. Tell the owner the next step is
+7. Run `make trace`. The new requirements show `NO TEST` — that is the to-do list for
+   `/build-loop`. Fix anything shown as `BAD TIER` or a duplicate ID.
+   `git add docs && git commit -m "FSD v0.1 and plan"`. Tell the owner the next step is
    `/commission` (with a board plugged into the dev box).
 
 Never write firmware in this skill.
