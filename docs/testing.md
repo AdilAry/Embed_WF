@@ -1,0 +1,108 @@
+# Testing: four tiers, fastest first
+
+Video 3's main point: **the AI needs objective feedback**. A test that prints PASS
+or FAIL is something an agent can act on. "Looks fine to me" is not. This page
+explains how the template gives it that feedback.
+
+## The rule
+
+> Prove each requirement at the **fastest tier that can prove it**. Run the tiers
+> in order, and don't start a slower tier while a faster one is red.
+
+| Tier | Command | Where it runs | Time | Proves |
+|---|---|---|---|---|
+| 1 host | `make host-test` | PC (g++) | < 1 s | logic: parsing, formatting, maths, state machines, protocol decoding |
+| 2 target | `make target-test` | ESP32 (`selftest` command) | 1–2 min incl. compile + flash | the hardware-dependent parts work on the chip: PSRAM, flash size, NVS, display init, touch controller |
+| 3 bench | `make bench-test` | ESP32 + dev box (pytest) | minutes | behaviour with the outside world: Wi-Fi join/loss, MQTT, BLE, captive portal, fault injection |
+| 4 field / manual | checklist in FSD §8 | the real world | — | end-to-end in the real place; anything only a human can judge |
+
+`make loop` = host → compile → upload → boot-check → target, stopping at the first failure.
+
+## Tier 1 — host tests
+
+- The code under test lives in `firmware/src/logic/` and **must not include
+  `Arduino.h`** or ESP-IDF headers. Then it compiles with plain `g++` on the PC.
+- Tests are in `test/host/test_main.cpp`, using a tiny built-in framework
+  (`test/host/mini_test.h`): `TEST(name) { CHECK(...); CHECK_EQ(a, b); }`.
+- Output: `HOSTTEST:<name>:PASS|FAIL`, and `HOSTTEST:DONE pass=N fail=M`.
+- **Design consequence:** keep "decide what to do" (pure logic, host-testable)
+  separate from "do it to the hardware" (hal). Example: a sensor driver has
+  `logic/bme280_math.cpp` (compensation formulas from the datasheet, tested with
+  the datasheet's example values) and `hal/bme280.cpp` (the I2C reads).
+
+When the agent writes host tests, check the expected values yourself sometimes.
+A test the agent wrote to match its own buggy code proves nothing. (While
+building this template, the first host run caught a wrong expectation in a
+test. That's the system working.)
+
+## Tier 2 — target tests
+
+- The firmware has a serial console. Its `selftest` command runs
+  `firmware/src/app/selftest.cpp` and prints one line per test:
+  ```
+  TEST:T-PSRAM:PASS:psram=8388608
+  TEST:T-TOUCH:PASS:type=gt911
+  SELFTEST:DONE pass=6 fail=0
+  ```
+- `tools/esp_serial.py selftest` sends the command, parses the lines, and exits
+  0 or 1. It also exits with an error if it sees a crash signature (`Guru
+  Meditation`, `Backtrace:`, a watchdog or brownout reset).
+- `make boot-check` resets the board and confirms a clean boot. If it misses the
+  `BOOT:OK` line (the S3's USB port drops out during reset), it asks the device
+  for `info` and checks that the last reset reason wasn't a panic or watchdog.
+- Add one `report("T-XXXX", ok, "...")` per target-tier requirement and put the
+  ID in the FSD's Test column.
+
+Why a console instead of a separate test firmware? It's the same binary you
+ship, so you're testing the real thing. The console also stays useful for
+debugging by hand (`help` at 115200 baud in any serial monitor).
+
+## Tier 3 — bench tests
+
+pytest files in `test/bench/`. Fixtures in `conftest.py` give each test:
+
+- `device`: send console commands, read `info` (skips if no board is connected)
+- `wifi_ap`: the test hotspot `embtest` on the dev box, brought up for the test
+  and torn down after (the dev box is `10.42.0.1` on it)
+- `mqtt_broker`: a private Mosquitto on the dev box, which the test may stop to
+  simulate an outage
+
+Example fault-injection test (in `test_smoke.py`, commented until your firmware has Wi-Fi):
+
+```python
+def test_req_020_reconnects_after_wifi_loss(device, wifi_ap):
+    device.command("wifi status", until="^WIFI connected")
+    subprocess.run(["bench-wifi", "down"], check=True)
+    device.command("wifi status", until="^WIFI disconnected", seconds=15)
+    subprocess.run(["bench-wifi", "up"], check=True)
+    device.command("wifi status", until="^WIFI connected", seconds=30)
+```
+
+Pattern: **the firmware exposes its state through console commands** (`wifi status`,
+`mqtt status`, `sensor read` …) so tests can observe it, and **the bench changes
+the world** around it.
+
+Other things the T480s bench can do:
+
+| Want to test | How |
+|---|---|
+| Captive portal | the dev box joins the ESP32's AP with `nmcli dev wifi connect <esp-ap>`, then submits the form with `curl` (or Python `requests`) |
+| Wrong Wi-Fi password | flash with a wrong `secrets.h`, or change the hotspot password with `BENCH_WIFI_PASS=… bench-wifi up` |
+| Channel change | `bench-wifi channel 11` |
+| MQTT payloads | `bench-mqtt sub 'mydevice/#'`, `bench-mqtt pub mydevice/cmd reboot` |
+| Broker outage | `bench-mqtt stop` … `bench-mqtt start` |
+| BLE advertising | `bench-ble-scan --name MyDevice` |
+| GPIO / buttons | not available on a laptop; use a second ESP32 as a "stimulus board" over USB serial, or a Pi later |
+
+## Tier 4 — field and manual
+
+Some things only you can judge: brightness, readability, touch feel, a sensor
+in its real spot. List them in FSD §8 as a checklist. `/build-loop` reminds you
+of them at the end of a phase.
+
+## Regression for free
+
+Once tests exist, `make loop && make bench-test` re-checks **everything** after
+every change. Video 3 makes this point: you'd never re-test by hand that
+thoroughly. Now it's one command, and CI runs tier 1 plus the compile on every
+push.

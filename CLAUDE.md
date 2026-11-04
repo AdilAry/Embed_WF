@@ -1,0 +1,30 @@
+# CLAUDE.md — working on the Embed_WF repo itself
+
+This repo is the **workflow kit**, not a firmware project. Real projects are
+created from `template/` into `~/projects/<name>` by `tools/new_project.sh`.
+
+Owner: beginner embedded engineer. Explain jargon briefly. Prefer simple,
+well-commented scripts over clever ones.
+
+## Layout
+
+- `docs/` — human guide (GUIDE, cheatsheet, testing, troubleshooting)
+- `hardware/boards/*.md` — board references, the shared knowledge across projects.
+  `template/docs/hardware/` holds a **copy** that CI checks is identical; edit
+  `hardware/boards/` and copy it over.
+- `template/` — starter project. Must always pass `make host-test` and `make compile`
+  (the `template` GitHub workflow enforces this).
+- `skills/<name>/SKILL.md` — Claude Code skills, symlinked into `~/.claude/skills` by
+  `devbox/setup-user.sh`.
+- `devbox/` — Mint setup scripts (root part / user part). Must stay idempotent.
+- `bench/` — dev-box test-bench commands, linked into `~/.local/bin`.
+
+## Rules
+
+- Keep the pinned versions in `template/Makefile` the single source of truth
+  (`devbox/setup-user.sh` reads them from there).
+- When a project discovers something true for the whole board, it goes into
+  `hardware/boards/…md` with **(unverified)** removed only once it has run on the
+  owner's hardware.
+- Shell scripts: `bash -n` clean, `set -euo pipefail`, no `sudo` inside user scripts.
+- Python: standard library + pyserial/pytest/bleak only.

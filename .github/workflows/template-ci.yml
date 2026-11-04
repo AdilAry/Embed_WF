@@ -1,0 +1,49 @@
+# Checks that the project template in this repo stays healthy:
+# host tests pass, firmware compiles, Python tools are valid, and the template's
+# copy of the board reference matches hardware/boards/.
+name: template
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  template:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: template
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Board reference copy is in sync
+        run: diff -u ../hardware/boards/guition-jc4827w543.md docs/hardware/guition-jc4827w543.md
+
+      - name: Python tools compile
+        run: python3 -m py_compile tools/esp_serial.py test/bench/*.py ../bench/bench-ble-scan
+
+      - name: Shell scripts parse
+        run: for f in ../devbox/*.sh ../tools/*.sh ../bench/bench-wifi ../bench/bench-mqtt; do bash -n "$f"; done
+
+      - name: Host tests (tier 1)
+        run: make host-test
+
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Cache Arduino core + libraries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.arduino15
+            ~/Arduino/libraries
+          key: arduino-${{ hashFiles('template/Makefile') }}
+
+      - name: Install ESP32 core + libraries
+        run: make deps
+
+      - name: Compile firmware
+        run: make compile
+
+      - name: Firmware size
+        run: ls -l build/fw/*.bin

@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# bench-mqtt - a private MQTT broker on the dev box for tests.
+#
+# Runs Mosquitto as YOUR user (no sudo), so tests can kill it to simulate
+# "broker offline" without touching your real Home Assistant broker.
+#
+#   bench-mqtt start            start broker on port 1883 (anonymous, test only!)
+#   bench-mqtt stop             stop it
+#   bench-mqtt status
+#   bench-mqtt sub [topic]      print messages for 10 s (default topic '#')
+#   bench-mqtt pub topic msg    publish one message
+set -euo pipefail
+
+PORT="${BENCH_MQTT_PORT:-1883}"
+DIR="${XDG_STATE_HOME:-$HOME/.local/state}/embwf-mqtt"
+CONF="$DIR/mosquitto.conf"
+PID="$DIR/mosquitto.pid"
+
+running() { [[ -f "$PID" ]] && kill -0 "$(cat "$PID")" 2>/dev/null; }
+
+start() {
+  if running; then echo "bench-mqtt: already running (port $PORT)"; return; fi
+  command -v mosquitto >/dev/null || { echo "bench-mqtt: mosquitto not installed" >&2; exit 3; }
+  mkdir -p "$DIR"
+  cat >"$CONF" <<EOF
+listener $PORT 0.0.0.0
+allow_anonymous true
+pid_file $PID
+log_dest file $DIR/mosquitto.log
+EOF
+  mosquitto -c "$CONF" -d
+  for _ in 1 2 3 4 5 6 7 8 9 10; do running && break; sleep 0.2; done
+  running || { echo "bench-mqtt: failed to start, see $DIR/mosquitto.log" >&2; exit 1; }
+  echo "bench-mqtt: RUNNING port=$PORT log=$DIR/mosquitto.log"
+}
+
+stop() {
+  if running; then kill "$(cat "$PID")"; rm -f "$PID"; echo "bench-mqtt: STOPPED"
+  else echo "bench-mqtt: not running"; fi
+}
+
+case "${1:-}" in
+  start) start ;;
+  stop) stop ;;
+  status) if running; then echo "bench-mqtt: RUNNING port=$PORT"; else echo "bench-mqtt: STOPPED"; exit 1; fi ;;
+  sub) timeout "${BENCH_MQTT_SECS:-10}" mosquitto_sub -h localhost -p "$PORT" -v -t "${2:-#}" || true ;;
+  pub) [[ $# -ge 3 ]] || { echo "usage: bench-mqtt pub <topic> <message>" >&2; exit 4; }
+       mosquitto_pub -h localhost -p "$PORT" -t "$2" -m "$3" ;;
+  *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 4 ;;
+esac

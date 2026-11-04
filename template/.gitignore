@@ -1,0 +1,15 @@
+build/
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
+
+# credentials never go to GitHub
+firmware/src/secrets.h
+.env
+
+# editor noise
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db

@@ -1,0 +1,42 @@
+# CI for an ESP32 project made from the Embed_WF template.
+# On every push: host tests (tier 1) + firmware compile. The .bin files are kept
+# as a downloadable artifact, so a machine without a toolchain can still flash.
+# Free for public repos; private repos get a monthly free-minutes allowance.
+name: firmware
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Host tests (tier 1)
+        run: make host-test
+
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Cache Arduino core + libraries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.arduino15
+            ~/Arduino/libraries
+          key: arduino-${{ hashFiles('Makefile') }}
+
+      - name: Install ESP32 core + libraries
+        run: make deps
+
+      - name: Compile firmware
+        run: make compile
+
+      - name: Upload firmware binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ github.sha }}
+          path: build/fw/*.bin
+          retention-days: 14
