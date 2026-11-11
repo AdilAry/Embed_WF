@@ -40,9 +40,10 @@ test. That's the system working.)
 - The firmware has a serial console. Its `selftest` command runs
   `firmware/src/app/selftest.cpp` and prints one line per test:
   ```
+  SELFTEST:BEGIN build=85560f84830a
   TEST:T-PSRAM:PASS:psram=8388608
-  TEST:T-TOUCH:PASS:type=gt911
-  SELFTEST:DONE pass=6 fail=0
+  TEST:T-TOUCH:PASS:type=gt911 expected=gt911
+  SELFTEST:DONE pass=7 fail=0
   ```
 - `tools/esp_serial.py selftest` sends the command, parses the lines, and exits
   0 or 1. It also exits with an error if it sees a crash signature (`Guru
@@ -64,7 +65,8 @@ debugging by hand (`help` at 115200 baud in any serial monitor).
 
 pytest files in `test/bench/`. Fixtures in `conftest.py` give each test:
 
-- `device`: send console commands, read `info` (skips if no board is connected)
+- `device`: send console commands, read `info`, and `device.wait_for(cmd, pattern)` to
+  ask again until the answer matches (skips if no board is connected)
 - `wifi_ap`: the test hotspot `embtest` on the dev box, brought up for the test
   and torn down after (the dev box is `10.42.0.1` on it)
 - `mqtt_broker`: a private Mosquitto on the dev box, which the test may stop to
@@ -74,11 +76,11 @@ Example fault-injection test (in `test_smoke.py`, commented until your firmware 
 
 ```python
 def test_req_020_reconnects_after_wifi_loss(device, wifi_ap):
-    device.command("wifi status", until="^WIFI connected")
+    device.wait_for("wifi status", "^WIFI connected", timeout=30)
     subprocess.run(["bench-wifi", "down"], check=True)
-    device.command("wifi status", until="^WIFI disconnected", seconds=15)
+    device.wait_for("wifi status", "^WIFI disconnected", timeout=15)
     subprocess.run(["bench-wifi", "up"], check=True)
-    device.command("wifi status", until="^WIFI connected", seconds=30)
+    device.wait_for("wifi status", "^WIFI connected", timeout=30)
 ```
 
 Pattern: **the firmware exposes its state through console commands** (`wifi status`,
@@ -115,17 +117,46 @@ Other things the T480s bench can do:
 | SKIPPED | bench test skipped (no board, no hotspot) | fix the bench, rerun |
 | NO TEST | the FSD names a test that doesn't exist | write it; this is the to-do list |
 | MANUAL | field/manual tier | your checklist in FSD §8 |
+| STALE | the tests passed, but on **older code** than what is in the folder now | rerun that tier (`make host-test`, `make loop`, `make bench-test`) |
 
 `make trace` alone only reports. `STRICT=1` fails on NO TEST or FAIL (CI uses this
-for the template). `RUN=1 REQS="REQ-010 REQ-020"` also fails on NOT RUN, which is
-what `/build-loop` uses before it ticks a plan item.
+for the template). `RUN=1 REQS="REQ-010 REQ-020"` also fails on NOT RUN, SKIPPED
+and STALE, which is what `/build-loop` uses before it ticks a plan item.
+
+### How a result is tied to the code
+
+A PASS only counts for the code it was produced from:
+
+- **host**: `make host-test` writes a fingerprint of `firmware/src/logic` and
+  `test/host` into its log. Change either and the old result is STALE.
+- **target**: `make compile` bakes a fingerprint of the whole `firmware/` folder
+  into the firmware (`FW_BUILD_ID`). The board prints it in `selftest` and
+  `info`, so the result says what was *really on the board*, whichever machine
+  or board it was. Edit the firmware without re-flashing and it is STALE.
+- **bench**: `make bench-test` records the board's build id and a fingerprint of
+  `test/bench`.
+
+Documentation, the FSD and `PLAN.md` are not part of any fingerprint, so ticking
+a plan item doesn't make anything stale.
+
+### Two boards
+
+Register each board once (`python3 tools/esp_serial.py register R`, or `C`;
+`/commission` does it). The registration is the USB serial number of the board,
+kept in `~/.config/embwf/boards` on the dev box. After that:
+
+- `make loop BOARD=C` flashes and tests the C board, even with both plugged in.
+- The self test is told which touch controller the board must have, so a C
+  board whose GT911 isn't detected **fails** `T-TOUCH` instead of quietly
+  running as an R board.
+- Each registered board keeps its own result (`build/target-test.R.log`,
+  `.C.log`). Write a test as `T-XXX@R, T-XXX@C` in the FSD to demand a pass on
+  both. The template does this for REQ-003.
 
 Known limits, so you're not misled by green:
-- Results are "last run on this machine", not "on this exact code". `make loop`
-  right before reading the table makes them current.
-- `target-test.log` holds the board that was plugged in last. REQ-003 (works on R
-  **and** C) needs a run on each. `/commission` does both, but the table only
-  remembers the last.
+- The resistive controller (XPT2046) can't be detected electrically. `T-TOUCH`
+  on the R board proves "no GT911 answered and this is the board we expected",
+  not "the resistive touch works". The corner-tap step in `/commission` does that.
 - A PASS is only as good as the test. Now and then, ask the agent to break the
   code on purpose and show you the test going red.
 

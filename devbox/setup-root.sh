@@ -8,7 +8,7 @@
 #
 # "embdev" is the separate, NON-admin Linux user the AI agent will work as.
 # It gets serial-port access, network-hotspot control and nothing else - so an
-# agent running with few permission prompts can't read your old files or sudo.
+# agent that runs every command without asking (pi does) can't read your old files or sudo.
 #
 # Safe to run again; every step checks before it changes anything.
 set -euo pipefail
@@ -86,6 +86,19 @@ ResultInactive=yes
 ResultActive=yes
 EOF
 
+# That rule lets $DEVUSER do everything NetworkManager offers, which includes
+# reading the passwords of Wi-Fi networks saved on this machine. The agent runs
+# as $DEVUSER, so don't leave your home Wi-Fi saved here: the dev box is on
+# Ethernet anyway. List what is saved and show how to forget it.
+saved_wifi="$(nmcli -t -f NAME,TYPE connection show 2>/dev/null | awk -F: '$2=="802-11-wireless" && $1!="bench-hotspot"{print $1}')" || true
+if [[ -n "$saved_wifi" ]]; then
+  echo "WARNING: these Wi-Fi networks are saved on this machine, and $DEVUSER (the AI agent) could read their passwords:"
+  echo "$saved_wifi" | sed 's/^/    /'
+  echo "  Forget each one you care about (the dev box uses Ethernet):  sudo nmcli connection delete \"<name>\""
+else
+  echo "no saved Wi-Fi networks - good"
+fi
+
 step "7/8 Mosquitto: disable the system service (bench-mqtt runs its own)"
 systemctl disable --now mosquitto 2>/dev/null || true
 
@@ -104,6 +117,6 @@ cat <<EOF
 Done. Next:
   1. Log out and log in as '$DEVUSER' (or from Windows: ssh $DEVUSER@$(hostname).local)
   2. gh auth login
-  3. gh repo clone <your-github-user>/Embed_WF ~/Embed_WF
+  3. gh repo clone adilary/embed_wf ~/Embed_WF
   4. bash ~/Embed_WF/devbox/setup-user.sh
 EOF

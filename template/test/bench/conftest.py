@@ -8,9 +8,11 @@ be proven by host or target tests.
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -20,7 +22,13 @@ ESP_SERIAL = [sys.executable, str(PROJECT / "tools" / "esp_serial.py")]
 
 
 class Device:
-    """Thin wrapper around tools/esp_serial.py so tests read like sentences."""
+    """Thin wrapper around tools/esp_serial.py so tests read like sentences.
+
+    Which board: whatever `make bench-test PORT=... / BOARD=...` selected (the
+    Makefile passes it on as $ESP_PORT / $ESP_BOARD), else the first one found.
+    Every call opens the serial port afresh; `make open-check` proves that this
+    does not reset the board.
+    """
 
     def run(self, *args: str, timeout: float = 60) -> subprocess.CompletedProcess:
         return subprocess.run(ESP_SERIAL + list(args), capture_output=True, text=True,
@@ -33,6 +41,23 @@ class Device:
         res = self.run(*args)
         assert res.returncode == 0, f"'{cmd}' failed (rc={res.returncode}):\n{res.stdout}\n{res.stderr}"
         return res.stdout
+
+    def wait_for(self, cmd: str, pattern: str, timeout: float = 30, every: float = 1.0) -> str:
+        """Ask `cmd` again and again until its reply matches `pattern` (a regex).
+
+        Use this for state that changes over time ("wifi status" turning into
+        "WIFI connected"). `command(..., until=...)` asks only ONCE and then just
+        listens, so it only works if the firmware prints the change by itself.
+        """
+        deadline = time.monotonic() + timeout
+        last = ""
+        while time.monotonic() < deadline:
+            res = self.run("cmd", *cmd.split(), "-s", "2")
+            last = res.stdout
+            if res.returncode == 0 and re.search(pattern, last, re.M):
+                return last
+            time.sleep(every)
+        raise AssertionError(f"'{cmd}' never matched /{pattern}/ within {timeout}s. Last reply:\n{last}")
 
     def info(self) -> dict[str, str]:
         out = self.command("info", until="^INFO")

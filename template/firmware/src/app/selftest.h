@@ -13,7 +13,9 @@
 namespace selftest {
 
 // Runs every test, prints the lines above, returns the number of failures.
-int runAll();
+// expectTouch: "xpt2046" / "gt911" if the tester knows which board this is
+// (tools/esp_serial.py passes it for a registered board), or "" if unknown.
+int runAll(const char* expectTouch = "");
 
 // Called once at the end of setup() with millis() at that moment (for T-BOOT).
 void setBootMs(uint32_t ms);

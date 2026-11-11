@@ -1,7 +1,7 @@
 # Datasheets
 
 Drop PDFs for any chip/sensor/module used in this project here, then run
-`/datasheet <file.pdf>` in Claude Code. It will:
+`/datasheet <file.pdf>` in pi. It will:
 
 1. extract the text to `<name>.txt` (with `pdftotext -layout`),
 2. write a short `<name>.summary.md`: pins, voltages, bus/protocol, addresses,

@@ -1,8 +1,6 @@
 ---
-name: new-project
 description: Create a new ESP32 project from the Embed_WF template, make the first commit and (optionally) a GitHub repository. Use when the owner wants to start a new embedded project.
 argument-hint: <project-name>
-disable-model-invocation: true
 ---
 
 # New embedded project
@@ -17,10 +15,14 @@ Project name requested: `$ARGUMENTS`
    plenty for hobby use. Then run, inside the project folder:
    `gh repo create <name> --private|--public --source . --push`
    If `gh` is not logged in, tell the owner to run `gh auth login` and stop.
+   If it is refused for lack of permission, the dev box uses a narrow GitHub token (that is
+   intended). Ask the owner to create an empty repo `<name>` on github.com and add it to that
+   token's repository list, then run `git remote add origin https://github.com/<owner>/<name>.git`
+   and `git push -u origin main`.
 4. Run `make host-test` in the project to prove the copy works.
 5. Tell the owner the next steps, exactly:
    - `cd ~/projects/<name>`
    - write the idea in `docs/IDEA.md` (plain words, 5–15 sentences)
-   - start `claude` in that folder and run `/define`
+   - start `pi` in that folder and run `/define`
 
-Do not start writing the FSD or any code in this skill.
+Do not start writing the FSD or any code in this command.

@@ -1,5 +1,5 @@
 # Checks that the project template in this repo stays healthy:
-# host tests pass, firmware compiles, Python tools are valid, and the template's
+# host tests pass, firmware compiles, Python tools and prompt templates are valid, and the template's
 # copy of the board reference matches hardware/boards/.
 name: template
 
@@ -34,6 +34,12 @@ jobs:
 
       - name: Shell scripts parse
         run: for f in ../devbox/*.sh ../tools/*.sh ../bench/bench-wifi ../bench/bench-mqtt; do bash -n "$f"; done
+
+      - name: Prompt templates have frontmatter with a description
+        run: |
+          for f in ../prompts/*.md; do
+            head -1 "$f" | grep -qx -- '---' && grep -q '^description: ' "$f" || { echo "bad frontmatter: $f"; exit 1; }
+          done
 
       - name: Host tests (tier 1)
         run: make host-test

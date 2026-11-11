@@ -105,9 +105,26 @@ def _project(tmp_path: Path) -> Path:
 
 def _status(root: Path) -> dict[str, str]:
     reqs = trace.parse_fsd((root / "docs" / "FSD.md").read_text())
-    results, _ = trace.load_results(root)
-    trace.evaluate(reqs, trace.discover(root), results)
+    results, _, stale = trace.load_results(root)
+    trace.evaluate(reqs, trace.discover(root), results, stale)
     return {r.rid: r.status for r in reqs}
+
+
+def _write_results(root: Path, board: str = "") -> None:
+    """Results as the make targets leave them, stamped for the CURRENT source."""
+    build = root / "build"
+    build.mkdir(exist_ok=True)
+    fw = trace.src_hash(root, "firmware")
+    (build / "host-test.log").write_text(
+        f"SRC:{trace.src_hash(root, 'host')}\n"
+        "HOSTTEST:wrap_basic:PASS\nHOSTTEST:wrap_long:PASS\nHOSTTEST:DONE pass=2 fail=0\n")
+    name = f"target-test.{board}.log" if board else "target-test.log"
+    (build / name).write_text(
+        f"SELFTEST:BEGIN build={fw}\nTEST:T-PSRAM:PASS:psram=8388608\nTEST:T-HEAP:PASS:x\n"
+        "SELFTEST:DONE pass=2 fail=0\n")
+    (build / "bench-test.xml").write_text(
+        '<testsuites><testsuite><testcase name="test_req_030_reconnect"/></testsuite></testsuites>')
+    (build / "bench-test.stamp").write_text(f"fw={fw} tests={trace.src_hash(root, 'bench')}\n")
 
 
 def test_parse_fsd_skips_placeholder_rows():
@@ -126,12 +143,10 @@ def test_trace_before_any_run(tmp_path):
 
 def test_trace_with_results(tmp_path):
     root = _project(tmp_path)
+    _write_results(root)
     build = root / "build"
-    build.mkdir()
-    (build / "host-test.log").write_text(
-        "HOSTTEST:wrap_basic:PASS\nHOSTTEST:wrap_long:FAIL\nHOSTTEST:DONE pass=1 fail=1\n")
-    (build / "target-test.log").write_text(
-        "TEST:T-PSRAM:PASS:psram=8388608\nTEST:T-HEAP:PASS:x\nSELFTEST:DONE pass=2 fail=0\n")
+    host = build / "host-test.log"
+    host.write_text(host.read_text().replace("wrap_long:PASS", "wrap_long:FAIL"))
     (build / "bench-test.xml").write_text(
         '<testsuites><testsuite><testcase name="test_req_030_reconnect"><skipped/></testcase>'
         "</testsuite></testsuites>")
@@ -140,6 +155,117 @@ def test_trace_with_results(tmp_path):
     assert s["REQ-020"] == "PASS"
     assert s["REQ-030"] == "SKIPPED"
     assert s["REQ-060"] == "PASS"
+
+
+def test_trace_all_green_when_results_match_the_source(tmp_path):
+    root = _project(tmp_path)
+    _write_results(root)
+    s = _status(root)
+    assert (s["REQ-010"], s["REQ-020"], s["REQ-030"]) == ("PASS", "PASS", "PASS")
+    assert trace.main(["--root", str(root), "--require-run", "REQ-010", "REQ-020", "REQ-030"]) == 0
+
+
+def test_trace_marks_results_stale_after_the_source_changes(tmp_path):
+    """The gate must not accept a PASS that was produced by older code."""
+    root = _project(tmp_path)
+    _write_results(root)
+    (root / "firmware" / "src" / "logic").mkdir()
+    (root / "firmware" / "src" / "logic" / "wrap.cpp").write_text("// changed after the test run\n")
+    s = _status(root)
+    assert s["REQ-010"] == "STALE"     # host: logic changed
+    assert s["REQ-020"] == "STALE"     # target: firmware on the board is an older build
+    assert s["REQ-030"] == "STALE"     # bench: same
+    assert trace.main(["--root", str(root), "--require-run", "REQ-010"]) == 1
+    assert trace.main(["--root", str(root), "--strict", "REQ-010"]) == 0   # like NOT RUN
+
+
+def test_trace_result_without_a_stamp_is_stale(tmp_path):
+    root = _project(tmp_path)
+    (root / "build").mkdir()
+    (root / "build" / "host-test.log").write_text("HOSTTEST:wrap_basic:PASS\nHOSTTEST:wrap_long:PASS\n")
+    (root / "build" / "target-test.log").write_text("SELFTEST:BEGIN\nTEST:T-PSRAM:PASS:x\n")
+    s = _status(root)
+    assert s["REQ-010"] == "STALE" and s["REQ-020"] == "STALE"
+
+
+def test_src_hash_ignores_generated_and_secret_files(tmp_path):
+    root = _project(tmp_path)
+    before = trace.src_hash(root, "firmware")
+    src = root / "firmware" / "src"
+    trace.write_build_id(root, src / "build_id.h")
+    (src / "secrets.h").write_text('#define WIFI_PASS "x"\n')
+    (root / "test" / "bench" / "__pycache__").mkdir()
+    (root / "test" / "bench" / "__pycache__" / "x.pyc").write_text("junk")
+    assert trace.src_hash(root, "firmware") == before
+    assert before in (src / "build_id.h").read_text()
+    (src / "selftest.cpp").write_text("// edited\n")
+    assert trace.src_hash(root, "firmware") != before
+
+
+def test_trace_per_board_requirement_needs_both_boards(tmp_path):
+    """`T-PSRAM@R, T-PSRAM@C` is only proven by a run on each registered board."""
+    root = _project(tmp_path)
+    fsd = root / "docs" / "FSD.md"
+    fsd.write_text(fsd.read_text().replace("| target | T-PSRAM |", "| target | T-PSRAM@R, T-PSRAM@C |"))
+    _write_results(root)                       # last run only, board unknown
+    assert _status(root)["REQ-020"] == "NOT RUN"
+    _write_results(root, board="R")
+    assert _status(root)["REQ-020"] == "NOT RUN"   # C still missing
+    _write_results(root, board="C")
+    assert _status(root)["REQ-020"] == "PASS"
+    c_log = root / "build" / "target-test.C.log"
+    c_log.write_text(c_log.read_text().replace("T-PSRAM:PASS", "T-PSRAM:FAIL"))
+    assert _status(root)["REQ-020"] == "FAIL"
+
+
+def test_trace_board_suffix_is_only_valid_for_target_tests(tmp_path):
+    root = _project(tmp_path)
+    fsd = root / "docs" / "FSD.md"
+    fsd.write_text(fsd.read_text().replace("| host | wrap_* |", "| host | wrap_basic@R |"))
+    assert _status(root)["REQ-010"] == "NO TEST"
+
+
+# ------------------------------------------------- esp_serial.py board registry
+PORTS = [("/dev/ttyACM0", 0x303A, "AA:AA"), ("/dev/ttyACM1", 0x303A, "BB:BB"),
+         ("/dev/ttyUSB0", 0x10C4, None)]
+
+
+def test_parse_boards():
+    text = "# comment\nAA:AA R\nBB:BB c   # my capacitive one\n\nbroken-line\n"
+    assert esp_serial.parse_boards(text) == {"AA:AA": "R", "BB:BB": "C"}
+
+
+def test_pick_port_by_registered_board():
+    boards = {"AA:AA": "R", "BB:BB": "C"}
+    assert esp_serial.pick_port(PORTS, boards, "C") == "/dev/ttyACM1"
+    assert esp_serial.pick_port(PORTS, boards, "r") == "/dev/ttyACM0"
+    assert esp_serial.pick_port(PORTS, {"AA:AA": "R"}, "C") is None   # never guess another board
+
+
+def test_pick_port_without_board_prefers_espressif():
+    assert esp_serial.pick_port(list(reversed(PORTS)), {}) == "/dev/ttyACM1"
+    assert esp_serial.pick_port([PORTS[2]], {}) == "/dev/ttyUSB0"
+    assert esp_serial.pick_port([], {}) is None
+
+
+def test_selftest_tells_the_firmware_which_touch_to_expect():
+    assert esp_serial.selftest_command(esp_serial.BOARD_TOUCH["C"]) == "selftest touch=gt911"
+    assert esp_serial.selftest_command(esp_serial.BOARD_TOUCH["R"]) == "selftest touch=xpt2046"
+    assert esp_serial.selftest_command(None) == "selftest"
+
+
+def test_board_report_path():
+    assert esp_serial.board_report_path(Path("build/target-test.log"), "C") == Path("build/target-test.C.log")
+
+
+def test_port_and_board_come_from_the_environment(monkeypatch):
+    """`make loop PORT=...` exports ESP_PORT so every step uses the same board."""
+    seen = {}
+    monkeypatch.setenv("ESP_PORT", "/dev/ttyACM9")
+    monkeypatch.setenv("ESP_BOARD", "c")
+    monkeypatch.setattr(esp_serial, "cmd_detect", lambda args: seen.update(vars(args)) or 0)
+    assert esp_serial.main(["detect"]) == 0
+    assert seen["port"] == "/dev/ttyACM9" and seen["board"] == "C"
 
 
 def test_trace_cli_exit_codes(tmp_path, capsys):

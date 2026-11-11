@@ -1,5 +1,4 @@
 ---
-name: define
 description: Turn the rough idea in docs/IDEA.md into a complete, testable Functional Specification (docs/FSD.md) by interviewing the owner one question at a time, then propose an implementation plan (docs/PLAN.md). Use when starting a project or when the FSD is still the empty template.
 argument-hint: "[optional extra context]"
 ---
@@ -57,4 +56,4 @@ testable and names the fastest test tier that can prove it**.
    `git add docs && git commit -m "FSD v0.1 and plan"`. Tell the owner the next step is
    `/commission` (with a board plugged into the dev box).
 
-Never write firmware in this skill.
+Never write firmware in this command.

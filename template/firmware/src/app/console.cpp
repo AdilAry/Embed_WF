@@ -39,7 +39,7 @@ void cmdHelp() {
   Serial.println("  help              this list");
   Serial.println("  ping              -> PONG (liveness check)");
   Serial.println("  info              firmware, memory, reset reason, touch type");
-  Serial.println("  selftest          run on-target tests (TEST:... lines)");
+  Serial.println("  selftest [touch=xpt2046|gt911]  run on-target tests (TEST:... lines)");
   Serial.println("  text <message>    show a word-wrapped message on the display");
   Serial.println("  bl <0..255>       set backlight");
   Serial.println("  touch             print one raw touch sample (press first)");
@@ -47,8 +47,8 @@ void cmdHelp() {
 }
 
 void cmdInfo() {
-  Serial.printf("INFO fw=%s ver=%s uptime_ms=%lu reset=%s heap=%lu psram=%lu/%lu touch=%s bl=%u\n",
-                FW_NAME, FW_VERSION, (unsigned long)millis(),
+  Serial.printf("INFO fw=%s ver=%s build=%s uptime_ms=%lu reset=%s heap=%lu psram=%lu/%lu touch=%s bl=%u\n",
+                FW_NAME, FW_VERSION, FW_BUILD_ID, (unsigned long)millis(),
                 resetReasonName(esp_reset_reason()), (unsigned long)ESP.getFreeHeap(),
                 (unsigned long)ESP.getFreePsram(), (unsigned long)ESP.getPsramSize(),
                 touch::typeName(), display::backlight());
@@ -65,7 +65,12 @@ void dispatch(const std::string& line) {
   } else if (c.name == "info") {
     cmdInfo();
   } else if (c.name == "selftest") {
-    selftest::runAll();
+    // Optional "touch=<type>": the controller the tester knows this board has.
+    std::string expectTouch;
+    for (const std::string& arg : c.args) {
+      if (arg.rfind("touch=", 0) == 0) expectTouch = arg.substr(6);
+    }
+    selftest::runAll(expectTouch.c_str());
   } else if (c.name == "text") {
     display::showText("Message", c.rest.c_str());
     Serial.println("OK");

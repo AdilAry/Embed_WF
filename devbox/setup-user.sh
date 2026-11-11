@@ -5,9 +5,11 @@
 #
 #     bash ~/Embed_WF/devbox/setup-user.sh
 #
-# Installs: arduino-cli + ESP32 core + libraries, Claude Code, the Embed_WF
-# skills (/define, /build-loop, ...), the bench-* commands, a Python venv for BLE.
-# Safe to run again.
+# Installs: arduino-cli + ESP32 core + libraries, the pi coding agent (pi.dev),
+# the Embed_WF prompt templates (/define, /build-loop, ...), the bench-*
+# commands, a Python venv for BLE.
+# Safe to run again. Run it again after `git pull` in ~/Embed_WF to refresh the
+# prompt templates.
 set -euo pipefail
 
 if [[ $EUID -eq 0 ]]; then echo "Don't run this with sudo." >&2; exit 1; fi
@@ -47,18 +49,23 @@ arduino-cli core update-index
 arduino-cli core install "esp32:esp32@$ESP32_CORE_VERSION"
 arduino-cli lib install "GFX Library for Arduino@$GFX_LIB_VERSION"
 
-step "4/7 Claude Code"
-if ! command -v claude >/dev/null; then
-  curl -fsSL https://claude.ai/install.sh | bash
+step "4/7 pi coding agent (pi.dev)"
+# The official installer brings its own pinned dependencies and pi updates itself
+# later with `pi update`.
+if ! command -v pi >/dev/null; then
+  curl -fsSL https://pi.dev/install.sh | sh
 fi
-command -v claude >/dev/null && claude --version || echo "open a new terminal, then run: claude"
+command -v pi >/dev/null && pi --version || echo "open a new terminal, then run: pi --version"
 
-step "5/7 Embed_WF skills -> ~/.claude/skills (available in every project)"
-mkdir -p "$HOME/.claude/skills"
-for d in "$REPO"/skills/*/; do
-  name="$(basename "$d")"
-  ln -sfn "$d" "$HOME/.claude/skills/$name"
-  echo "  /$name"
+step "5/7 Embed_WF prompt templates -> pi (available in every project)"
+# pi turns every .md file in its prompts folder into a slash command:
+# define.md -> /define. Copied (not linked), so re-run this script after
+# changing a file in Embed_WF/prompts/.
+PI_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
+mkdir -p "$PI_DIR/prompts"
+for f in "$REPO"/prompts/*.md; do
+  cp "$f" "$PI_DIR/prompts/"
+  echo "  /$(basename "$f" .md)"
 done
 
 step "6/7 bench commands -> $BIN"
@@ -85,8 +92,9 @@ gh auth status >/dev/null 2>&1 && echo "gh: logged in" || echo "gh: run 'gh auth
 cat <<EOF
 
 Done. Next:
-  1. Open a NEW terminal (PATH changes), then run:  claude   and log in with your Claude account.
+  1. Open a NEW terminal (PATH changes), then run:  pi   and type /login to connect your
+     model provider (a subscription or an API key). /quit to leave.
   2. Plug in a board and run:  arduino-cli board list
   3. Create your first project:  new-embedded-project hello-board
-  4. Follow docs/GUIDE.md, part 4 ("First project").
+  4. Follow docs/GUIDE.md, section 5 ("Part C - your first project").
 EOF

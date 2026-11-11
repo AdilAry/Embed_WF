@@ -1,7 +1,5 @@
 ---
-name: wrap-up
 description: End-of-session housekeeping - bring README, FSD status, PLAN and NOTES up to date with what was actually done, run make check, commit and push. Use when the owner says wrap up, update documentation and push, or is about to stop working.
-disable-model-invocation: true
 ---
 
 # /wrap-up — leave the project ready for next time
@@ -17,6 +15,7 @@ disable-model-invocation: true
    and suggest adding it to `~/Embed_WF/hardware/boards/guition-jc4827w543.md` (and committing there).
 4. `make check` must be green. If it isn't, say so and don't push.
    Then `python3 tools/trace.py --out docs/STATUS.md` to refresh the requirement status page
-   (it reflects the last run of each tier; say so if target/bench weren't run this session).
+   (it reflects the last run of each tier; tell the owner about every row that is `STALE` or
+   `NOT RUN`, because those are not proven for the code being pushed).
 5. Commit `"Docs: session wrap-up"` and `git push`. Then `gh run list -L 1` to show CI status.
 6. Give the owner a 5-line summary: done, test counts, trace summary line, CI status, next step, anything needing their hands.

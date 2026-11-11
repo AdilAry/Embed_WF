@@ -1,5 +1,4 @@
 ---
-name: datasheet
 description: Extract and summarise a component datasheet PDF from datasheets/ into a compact, page-referenced summary the agent can use for drivers and libraries. Use when a new chip, sensor or module PDF is added, or before writing a driver for a part without a library.
 argument-hint: <file.pdf>
 ---

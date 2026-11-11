@@ -27,8 +27,8 @@ def test_unknown_command_is_rejected(device):
 # Example of a fault-injection test - enable once your firmware has Wi-Fi.
 #
 # def test_req_020_reconnects_after_wifi_loss(device, wifi_ap):
-#     device.command("wifi status", until="^WIFI connected")
+#     device.wait_for("wifi status", "^WIFI connected", timeout=30)
 #     subprocess.run(["bench-wifi", "down"], check=True)
-#     device.command("wifi status", until="^WIFI disconnected", seconds=15)
+#     device.wait_for("wifi status", "^WIFI disconnected", timeout=15)
 #     subprocess.run(["bench-wifi", "up"], check=True)
-#     device.command("wifi status", until="^WIFI connected", seconds=30)
+#     device.wait_for("wifi status", "^WIFI connected", timeout=30)

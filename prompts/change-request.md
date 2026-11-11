@@ -1,5 +1,4 @@
 ---
-name: change-request
 description: Handle a change or new feature for an existing project - update the FSD first (new/changed REQ IDs, version bump, change log), add plan items and tests, then implement with the build loop. Use when the owner wants to change behaviour, add a feature, or fix a spec-level problem.
 argument-hint: <what should change>
 ---

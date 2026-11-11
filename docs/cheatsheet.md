@@ -12,7 +12,7 @@ tmux new -s work        # or: tmux attach -t work
 
 VS Code: `F1` → *Remote-SSH: Connect to Host* → open `~/projects/<name>`.
 
-## Project lifecycle (in Claude Code)
+## Project lifecycle (in pi)
 
 | Step | Type |
 |---|---|
@@ -23,7 +23,7 @@ VS Code: `F1` → *Remote-SSH: Connect to Host* → open `~/projects/<name>`.
 | Add a part | put the PDF in `datasheets/`, then `/datasheet <file>.pdf` |
 | Change something | `/change-request <what>` |
 | End of session | `/wrap-up` |
-| Resume last session | `claude --continue` |
+| Resume last session | `pi -c` (latest) or `pi -r` (pick one) |
 
 ## make targets (in a project)
 
@@ -31,16 +31,20 @@ VS Code: `F1` → *Remote-SSH: Connect to Host* → open `~/projects/<name>`.
 make host-test     tier 1 (seconds)
 make compile       build firmware
 make check         host-test + compile (= CI)
-make upload        flash (PORT=/dev/ttyACM1 to choose)
+make upload        flash
 make boot-check    reset + verify clean boot
 make target-test   tier 2, on-board selftest
 make bench-test    tier 3, pytest
 make loop          host → compile → upload → boot-check → target
 make info          one-line device status
 make monitor SECS=30
-make trace         requirement -> test -> last result table
+make trace         requirement -> test -> last result table (STALE = passed on older code)
 make trace RUN=1 REQS="REQ-010 REQ-020"   must say TRACE:OK before ticking a plan item
 make ci-fw         download the firmware CI built for this commit (then make upload)
+make boards        connected boards, and which is registered as R / C
+make open-check    does opening the serial port reset the board? (must say OPENCHECK:OK)
+
+Any target takes BOARD=R or BOARD=C (or PORT=/dev/ttyACM1): make loop BOARD=C
 ```
 
 ## Serial console (115200 baud)
@@ -74,7 +78,7 @@ bench-ble-scan [--name X] [-s 10]
 - "Break the wrap logic on purpose and show me the test catches it, then undo it."
 - "Update the docs, commit and push."
 
-## Claude Code keys / commands
+## pi keys / commands
 
-`Esc` stop · `Esc Esc` rewind · `Shift+Tab` cycle permission mode · `/clear` new topic ·
-`/compact` shrink context · `/model` switch model · `/help`
+`Esc` stop the agent · `/new` new topic · `/resume` older session · `/session` tokens + cost ·
+`/compact` shrink context · `/model` (Ctrl+L) switch model · `/reload` re-read prompts · `/hotkeys` · `/quit`

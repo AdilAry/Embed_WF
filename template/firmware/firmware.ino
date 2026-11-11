@@ -75,8 +75,9 @@ void setup() {
 
   const uint32_t bootMs = millis();
   selftest::setBootMs(bootMs);
-  Serial.printf("BOOT:OK fw=%s ver=%s display=%d touch=%s boot_ms=%lu\n", FW_NAME, FW_VERSION,
-                display::ok() ? 1 : 0, touch::typeName(), (unsigned long)bootMs);
+  Serial.printf("BOOT:OK fw=%s ver=%s build=%s display=%d touch=%s boot_ms=%lu\n", FW_NAME,
+                FW_VERSION, FW_BUILD_ID, display::ok() ? 1 : 0, touch::typeName(),
+                (unsigned long)bootMs);
 }
 
 void loop() {

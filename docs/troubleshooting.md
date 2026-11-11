@@ -1,7 +1,7 @@
 # Troubleshooting
 
-Before anything else, tell Claude what's wrong in plain words. It can usually
-diagnose it. This page is for when you'd rather know yourself, or when Claude
+Before anything else, tell the agent what's wrong in plain words. It can usually
+diagnose it. This page is for when you'd rather know yourself, or when the agent
 itself can't run.
 
 ## Board / serial
@@ -12,24 +12,30 @@ itself can't run.
 | `Permission denied: /dev/ttyACM0` | `id` must list `dialout`. Log out and back in after `setup-root.sh`. |
 | Port appears then vanishes (CH340/CP210x boards) | `brltty` is stealing it: `sudo apt remove brltty` (the setup script does this). |
 | Upload: "Failed to connect" / "No serial data received" | Hold **BOOT**, tap **RESET**, release **BOOT**, `make upload`, then press RESET. Usually caused by a firmware crash loop. |
-| `make boot-check` reports `reset=panic` | The firmware crashes at boot. `make monitor SECS=20` and look for `Backtrace:`. Ask Claude to decode it. |
+| `make boot-check` reports `reset=panic` | The firmware crashes at boot. `make monitor SECS=20` and look for `Backtrace:`. Ask the agent to decode it. |
 | No serial output at all | FQBN must contain `CDCOnBoot=cdc` (the Makefile does). In Arduino IDE: *USB CDC On Boot = Enabled*. |
 | Garbled serial | Baud mismatch: the template uses 115200. |
 | T-PSRAM fails | PSRAM must be **OPI**, not QSPI. Check FQBN `PSRAM=opi`. |
 | Display stays black | Backlight on? `bl 200` in the console. Colours inverted? The `IPS` flag must be `true`. |
 | Touch coordinates are wrong (R board) | Use `touch` command at four corners → update `XPT_*` in `firmware/src/config.h`. |
-| Touch shows `xpt2046` on the C board | GT911 not found on I2C. Address may depend on INT level at reset; Claude can add a reset sequence on IO38. Record the fix in the board file. |
-| Two boards plugged in | `make upload PORT=/dev/ttyACM1` (see `python3 tools/esp_serial.py list`). |
+| Touch shows `xpt2046` on the C board | GT911 not found on I2C. Address may depend on INT level at reset; the firmware already retries with the GT911 reset sequence on IO38; ask the agent to dig further. Record the fix in the board file. |
+| Two boards plugged in | `make boards` shows which is R and which is C. Add `BOARD=R` or `BOARD=C` to any make command (`make loop BOARD=C`); every step then uses that board. `PORT=/dev/ttyACM1` works too. |
+| `make boards` shows `board=-` | That board isn't registered yet. Plug it in alone and run `python3 tools/esp_serial.py register R` (or `C`). Once per board per dev box. |
+| `T-TOUCH` fails with `expected=unknown(register-the-board)` | Same thing: the self test doesn't know which touch controller this board must have. Register it. |
+| `T-TOUCH` fails with `type=xpt2046 expected=gt911` | The C board's GT911 wasn't found, so the firmware fell back to the resistive driver. That's a real fault on the C board (or the board is registered under the wrong letter: fix the line in `~/.config/embwf/boards`). |
+| `no connected board is registered as C` | The C board is unplugged, or was never registered. |
+| `make open-check` prints `OPENCHECK:RESETS` | **Board restarts when the port is opened.** The S3's built-in USB uses the DTR/RTS lines as reset signals and Linux toggles them on open. Single commands still work (the tool waits for the reboot). Multi-step bench tests lose device state between steps. Tell the agent: "esp_serial.py resets the board on open; keep one serial connection open for the whole pytest session instead of one per command", and try `stty -F /dev/ttyACM0 -hupcl` first, which stops Linux dropping the lines on close. |
+| `make trace` shows `STALE` | The test passed on older code. Rerun that tier: `make host-test`, `make loop`, or `make bench-test`. `STALE` on target/bench with `build unknown` means the firmware wasn't built by `make compile` (Arduino IDE build). |
 
 ## Toolchain
 
 | Symptom | Fix |
 |---|---|
 | `make deps` can't find `esp32:esp32` | Board index URL missing. Run `make deps` (it passes the URL), or `arduino-cli config set board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json`. |
-| Pinned version not found | Version numbers in `template/Makefile` (`ESP32_CORE_VERSION`, `GFX_LIB_VERSION`) can be changed. Ask Claude to pick the newest 3.3.x / 1.6.x and re-run the tests. |
+| Pinned version not found | Version numbers in `template/Makefile` (`ESP32_CORE_VERSION`, `GFX_LIB_VERSION`) can be changed. Ask the agent to pick the newest 3.3.x / 1.6.x and re-run the tests. |
 | `ledcSetup was not declared` | 2.x API in old code. Use `ledcAttach`/`ledcWrite` (core 3.x). |
 | Sketch too big | `PartitionScheme=huge_app` is already the default. Need OTA? Then `default` partition and slimmer code. |
-| CI red but local green | Open the Actions log on GitHub, or ask Claude: `gh run view --log-failed`. |
+| CI red but local green | Open the Actions log on GitHub, or ask the agent: `gh run view --log-failed`. |
 
 ## Dev box / network
 
@@ -42,12 +48,16 @@ itself can't run.
 | SSH from Windows times out | Is the T480s asleep? Set the lid action to "Do nothing" and disable suspend on AC. Check the IP in the router. |
 | Agent stopped when I closed my laptop | Run it inside `tmux` (see GUIDE §B5). |
 
-## Claude Code
+## pi (the agent)
 
 | Symptom | Fix |
 |---|---|
-| `claude: command not found` | Open a new terminal (PATH). Otherwise re-run `bash ~/Embed_WF/devbox/setup-user.sh`. |
-| Skills like `/define` don't appear | `ls -l ~/.claude/skills` should show symlinks into `~/Embed_WF/skills`. Re-run setup-user.sh. Restart `claude`. |
-| Usage limit reached | Wait for the window to reset. See GUIDE §7 for ways to use less. |
-| Claude asks permission for everything | Start `claude` **inside the project folder**, so `.claude/settings.json` is picked up. |
-| Claude goes in circles on a bug | Stop it (`Esc`). Ask it to summarise what it tried and its hypothesis. Often the FSD is ambiguous, or the problem is physical (cable, wrong board). |
+| `pi: command not found` | Open a new terminal (PATH). Otherwise re-run `bash ~/Embed_WF/devbox/setup-user.sh`. |
+| Commands like `/define` don't appear | `ls ~/.pi/agent/prompts` should list `define.md`, `commission.md` and the others. If not, re-run setup-user.sh. In a running pi, `/reload` picks them up. |
+| I edited a file in `Embed_WF/prompts/` and nothing changed | They are copied, not linked. Re-run setup-user.sh, then `/reload`. |
+| "No model" / asks to log in | `/login`, choose your provider, then `/model`. |
+| Out of quota or credit | Wait for the quota window, or top up. See GUIDE §7 for ways to use less. |
+| The agent ran something I didn't expect | That is how pi works: it never asks first. `Esc` stops it. This is why it runs as `embdev` on the spare machine (GUIDE §6). |
+| The agent goes in circles on a bug | Stop it (`Esc`). Ask it to summarise what it tried and its hypothesis. Often the FSD is ambiguous, or the problem is physical (cable, wrong board). |
+| `new-embedded-project` says git doesn't know who you are | Run the two `git config --global user.…` commands it prints, then try again. |
+| `gh repo create` is refused | The dev box's GitHub token is deliberately narrow. Create the empty repo on github.com, add it to the token's repository list, then push (GUIDE §B3). |

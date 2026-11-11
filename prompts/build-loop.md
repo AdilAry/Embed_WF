@@ -1,5 +1,4 @@
 ---
-name: build-loop
 description: Implement the next phase of docs/PLAN.md in a closed loop - write tests, implement, host-test, compile, flash, boot-check, run target and bench tests, diagnose failures, fix, repeat until green, then commit. Use when the owner says build, implement, continue, or next phase.
 argument-hint: "[phase number or REQ IDs - default: next unchecked phase]"
 ---
@@ -8,7 +7,7 @@ argument-hint: "[phase number or REQ IDs - default: next unchecked phase]"
 
 Target: $ARGUMENTS (if empty: the first phase in `docs/PLAN.md` with unchecked items).
 
-Follow "The development loop" in `CLAUDE.md` exactly. Summary:
+Follow "The development loop" in `AGENTS.md` exactly. Summary:
 
 ```
 for each plan item in the phase:
@@ -25,6 +24,12 @@ for each plan item in the phase:
     tick the item in docs/PLAN.md, git commit -m "REQ-xxx: <what>"
 ```
 
+`make trace` ties every result to the code it came from. `STALE` means you changed the source
+after that tier last ran, so the old PASS no longer counts: rerun the tier (`make host-test`,
+`make loop`, `make bench-test`) rather than arguing with it. With both boards plugged in, add
+`BOARD=R` or `BOARD=C` to the make commands; a requirement whose Test column says `T-XXX@R, T-XXX@C`
+needs `make loop` on each.
+
 ## Guard rails
 
 - **Budget**: if the same test still fails after 3 genuinely different fixes, stop. Summarise what
@@ -38,7 +43,7 @@ for each plan item in the phase:
 - Prefer small commits. Each commit must leave `make check` green.
 - Keep `docs/NOTES.md` updated with anything a future session would need (pin conflicts, library
   bugs, timing quirks). Board-wide findings: suggest adding them to the board reference.
-- Usage limits are real on the Pro plan: don't re-read big files unnecessarily, use
+- Tokens cost money or quota: don't re-read big files unnecessarily, use
   `datasheets/*.summary.md` before full datasheet text, and keep serial captures short (`SECS=`).
 
 ## When the phase is green

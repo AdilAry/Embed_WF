@@ -12,7 +12,7 @@
 #
 # IMPORTANT: the laptop's Wi-Fi card can be a hotspot OR a normal client, not both.
 # Plug the dev box into your router with an Ethernet cable (or use a USB Wi-Fi
-# dongle for internet), otherwise starting the hotspot cuts Claude Code off.
+# dongle for internet), otherwise starting the hotspot cuts the agent off from the internet.
 set -euo pipefail
 
 SSID="${BENCH_WIFI_SSID:-embtest}"

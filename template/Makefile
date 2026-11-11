@@ -23,14 +23,26 @@ ESP32_CORE_VERSION ?= 3.3.10
 GFX_LIB_VERSION    ?= 1.6.8
 LIBS ?= "GFX Library for Arduino@$(GFX_LIB_VERSION)"
 
-# Serial port: auto-detected (first Espressif USB device). Override: make upload PORT=/dev/ttyACM1
-PORT ?= $(shell $(SERIAL) detect 2>/dev/null)
+# Which board? Three ways, most specific first:
+#   make loop PORT=/dev/ttyACM1    this exact port
+#   make loop BOARD=C              the board registered as C (see `make boards`)
+#   make loop                      the first Espressif USB device found
+# The choice is exported so EVERY step (upload, boot-check, target-test and the
+# pytest bench tests) talks to the same board.
+BOARD ?=
+ifdef PORT
+export ESP_PORT := $(PORT)
+endif
+ifneq ($(BOARD),)
+export ESP_BOARD := $(BOARD)
+endif
+PORT ?= $(shell ESP_BOARD=$(BOARD) $(SERIAL) detect 2>/dev/null)
 
 HOST_CXX    ?= g++
 HOST_FLAGS  := -std=c++17 -Wall -Wextra -Werror -O1 -g -Ifirmware/src -Itest/host
 HOST_SRCS   := $(wildcard firmware/src/logic/*.cpp) $(wildcard test/host/*.cpp)
 
-.PHONY: help deps host-test compile upload monitor boot-check ping info target-test bench-test check loop size clean trace ci-fw
+.PHONY: help deps host-test compile upload monitor boot-check ping info target-test bench-test check loop size clean trace ci-fw boards open-check
 
 help:
 	@echo "make deps         install ESP32 core + libraries (once per machine)"
@@ -46,19 +58,29 @@ help:
 	@echo "make loop         host-test -> compile -> upload -> boot-check -> target-test"
 	@echo "make trace        requirement -> test -> last result matrix (STRICT=1 / RUN=1 to enforce)"
 	@echo "make ci-fw        download the firmware GitHub CI built for HEAD (instead of compiling)"
+	@echo "make boards       list connected boards and which is registered as R / C"
+	@echo "make open-check   prove that opening the serial port does not reset the board"
+	@echo "Pick a board on any target with BOARD=R|C or PORT=/dev/ttyACMx."
 
 deps:
 	arduino-cli core update-index --additional-urls $(ESP32_INDEX)
 	arduino-cli core install esp32:esp32@$(ESP32_CORE_VERSION) --additional-urls $(ESP32_INDEX)
 	arduino-cli lib install $(LIBS)
 
-# The result of the last run of each tier is kept in build/ for `make trace`.
+# The result of the last run of each tier is kept in build/ for `make trace`,
+# stamped with a fingerprint of the source it ran against. If the source changes
+# afterwards, `make trace` shows the result as STALE instead of PASS.
 host-test:
 	@mkdir -p $(BUILD)
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_SRCS) -o $(BUILD)/host_tests
-	@./$(BUILD)/host_tests > $(BUILD)/host-test.log; rc=$$?; cat $(BUILD)/host-test.log; exit $$rc
+	@echo "SRC:$$($(PY) tools/trace.py --hash host)" > $(BUILD)/host-test.log
+	@./$(BUILD)/host_tests >> $(BUILD)/host-test.log; rc=$$?; cat $(BUILD)/host-test.log; exit $$rc
 
+# The firmware carries the fingerprint of the source it was built from
+# (FW_BUILD_ID, printed by `info` and `selftest`), so a target or bench result
+# can be tied to the code that is really on the board.
 compile:
+	@$(PY) tools/trace.py --write-build-id firmware/src/build_id.h
 	arduino-cli compile --fqbn $(FQBN) --warnings default \
 		--build-path $(BUILD)/arduino --output-dir $(BUILD)/fw $(SKETCH)
 
@@ -89,6 +111,7 @@ target-test:
 
 bench-test:
 	@mkdir -p $(BUILD)
+	@echo "fw=$$($(SERIAL) buildid 2>/dev/null) tests=$$($(PY) tools/trace.py --hash bench)" > $(BUILD)/bench-test.stamp
 	$(PY) -m pytest -v --junitxml=$(BUILD)/bench-test.xml test/bench
 
 loop: host-test compile upload boot-check target-test
@@ -101,8 +124,16 @@ loop: host-test compile upload boot-check target-test
 trace:
 	$(PY) tools/trace.py $(if $(RUN),--require-run,$(if $(STRICT),--strict)) $(REQS)
 
+boards:
+	$(SERIAL) list
+
+open-check:
+	$(SERIAL) opencheck
+
 # Video 3's trick: let GitHub Actions compile, and only flash on the dev box.
 # Needs `gh auth login`, the commit pushed, and its `firmware` workflow finished.
+# `make upload` still flashes with arduino-cli and the installed ESP32 core;
+# this only saves the compile.
 ci-fw:
 	@mkdir -p $(BUILD)/fw
 	gh run download --name firmware-$$(git rev-parse HEAD) --dir $(BUILD)/fw
