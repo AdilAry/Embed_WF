@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# bench-wifi - a throw-away test Wi-Fi network on the dev box (the T480s).
+#
+# The ESP32 under test joins THIS network, never your home Wi-Fi, so tests can
+# switch it off, change channel, etc. without breaking anything at home.
+#
+#   bench-wifi up        start hotspot  (SSID/password below, dev box = 10.42.0.1)
+#   bench-wifi down      stop hotspot   (simulates "Wi-Fi disappeared")
+#   bench-wifi status    show whether it is running
+#   bench-wifi clients   list devices that joined
+#   bench-wifi channel N restart on channel N (1-13)
+#
+# IMPORTANT: the laptop's Wi-Fi card can be a hotspot OR a normal client, not both.
+# Plug the dev box into your router with an Ethernet cable (or use a USB Wi-Fi
+# dongle for internet), otherwise starting the hotspot cuts the agent off from the internet.
+set -euo pipefail
+
+SSID="${BENCH_WIFI_SSID:-embtest}"
+PASS="${BENCH_WIFI_PASS:-change-me-123}"
+CHANNEL="${BENCH_WIFI_CHANNEL:-6}"
+CONN="bench-hotspot"
+
+iface() {
+  if [[ -n "${BENCH_WIFI_IFACE:-}" ]]; then echo "$BENCH_WIFI_IFACE"; return; fi
+  nmcli -t -f DEVICE,TYPE device | awk -F: '$2=="wifi"{print $1; exit}'
+}
+
+guard_internet() {
+  local ifc="$1" route_dev
+  route_dev="$(ip route get 1.1.1.1 2>/dev/null | sed -n 's/.* dev \([^ ]*\).*/\1/p' | head -1)"
+  if [[ "$route_dev" == "$ifc" && "${BENCH_WIFI_FORCE:-0}" != "1" ]]; then
+    echo "bench-wifi: refusing - $ifc is this machine's internet connection." >&2
+    echo "  Connect Ethernet (or a USB Wi-Fi dongle) first, or set BENCH_WIFI_FORCE=1." >&2
+    exit 2
+  fi
+}
+
+up() {
+  local ifc; ifc="$(iface)"
+  [[ -n "$ifc" ]] || { echo "bench-wifi: no Wi-Fi interface found" >&2; exit 3; }
+  guard_internet "$ifc"
+  nmcli connection down "$CONN" >/dev/null 2>&1 || true
+  nmcli device wifi hotspot ifname "$ifc" con-name "$CONN" ssid "$SSID" \
+    password "$PASS" band bg channel "$CHANNEL" >/dev/null
+  # Never bring the test network up by itself after a reboot.
+  nmcli connection modify "$CONN" connection.autoconnect no >/dev/null 2>&1 || true
+  echo "bench-wifi: UP ssid=$SSID channel=$CHANNEL iface=$ifc gateway=10.42.0.1"
+}
+
+down() {
+  if nmcli connection down "$CONN" >/dev/null 2>&1; then
+    echo "bench-wifi: DOWN"
+  else
+    echo "bench-wifi: already down"
+  fi
+}
+
+status() {
+  if nmcli -t -f NAME connection show --active | grep -qx "$CONN"; then
+    echo "bench-wifi: UP ssid=$SSID"
+  else
+    echo "bench-wifi: DOWN"
+    return 1
+  fi
+}
+
+clients() {
+  local ifc; ifc="$(iface)"
+  ip neigh show dev "$ifc" | awk '$1 ~ /^10\.42\.0\./ {print $1, $3, $NF}'
+}
+
+case "${1:-}" in
+  up) up ;;
+  down) down ;;
+  status) status ;;
+  clients) clients ;;
+  channel)
+    [[ "${2:-}" =~ ^([1-9]|1[0-3])$ ]] || { echo "usage: bench-wifi channel 1..13" >&2; exit 4; }
+    CHANNEL="$2"; down >/dev/null; up ;;
+  *) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 4 ;;
+esac

@@ -1,0 +1,67 @@
+# Checks that the project template in this repo stays healthy:
+# host tests pass, firmware compiles, Python tools and prompt templates are valid, and the template's
+# copy of the board reference matches hardware/boards/.
+name: template
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  template:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: template
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Board reference copy is in sync
+        run: diff -u ../hardware/boards/guition-jc4827w543.md docs/hardware/guition-jc4827w543.md
+
+      - name: Python tools compile
+        run: python3 -m py_compile tools/esp_serial.py tools/trace.py test/bench/*.py ../bench/bench-ble-scan
+
+      - name: Tool tests (serial tool parsing, traceability)
+        run: |
+          python3 -m pip install --quiet pytest pyserial
+          python3 -m pytest -q ../tests
+
+      - name: Shell scripts parse
+        run: for f in ../devbox/*.sh ../tools/*.sh ../bench/bench-wifi ../bench/bench-mqtt; do bash -n "$f"; done
+
+      - name: Prompt templates have frontmatter with a description
+        run: |
+          for f in ../prompts/*.md; do
+            head -1 "$f" | grep -qx -- '---' && grep -q '^description: ' "$f" || { echo "bad frontmatter: $f"; exit 1; }
+          done
+
+      - name: Host tests (tier 1)
+        run: make host-test
+
+      - name: Every template requirement points at a real test
+        run: python3 tools/trace.py --strict --out "$GITHUB_STEP_SUMMARY"
+
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Cache Arduino core + libraries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.arduino15
+            ~/Arduino/libraries
+          key: arduino-${{ hashFiles('template/Makefile') }}
+
+      - name: Install ESP32 core + libraries
+        run: make deps
+
+      - name: Compile firmware
+        run: make compile
+
+      - name: Firmware size
+        run: ls -l build/fw/*.bin
