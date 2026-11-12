@@ -1,7 +1,25 @@
 # Review history of the Embed_WF kit
 
-Three passes so far. The newest is first. None of them has touched your real
+Four passes so far. The newest is first. None of them has touched your real
 boards or the T480s, so the last section is the list that matters most.
+
+## Pass 4 (November 2026): the short loop
+
+Your generic short-loop workflow (short sessions, files as memory, `/start` …
+`/wrap`, `/judge` in a fresh session) was reviewed and made the way every
+project in this kit is worked. The embedded workflow changed shape to fit it.
+
+| # | Finding | Why it matters | Change |
+|---|---|---|---|
+| 1 | The embedded kit ran long: `/build-loop` implemented a whole phase with no plan approval, the opposite of a short loop. | Long sessions cost more per step as context fills, and your only gates were physical actions and failures. | `/build-loop` and `/wrap-up` are gone. One plan item per session: `/start` proposes a plan and waits, the agent loops against the tests inside it, `/wrap` ends it. The closed test loop is still there, just bounded. |
+| 2 | The embedded kit had no current-state file. `docs/NOTES.md` was an append-only log the agent was pointed at every session. | That is the growing-file problem your workflow was written to fix. | `PROGRESS.md` (snapshot, rewritten every `/wrap`), `docs/history.md` (append-only, read on request) and `docs/decisions.md` replace `NOTES.md`. |
+| 3 | The short-loop workflow only ran under Claude Code (`CLAUDE.md`, `.claude/commands/` per project, `~/.claude/CLAUDE.md`). | pi is in use here, and pi reads none of those. | `AGENTS.md` is the instruction file, `CLAUDE.md` a one-line shim. One `prompts/` folder serves both agents; `tools/install-workflow.sh` installs it and the user-level file per machine. |
+| 4 | The project template was shaped by a hackathon data app; other project types had to delete most of it. | "Applies to most software work" by deletion is fragile, and the always-loaded file carried fields most projects don't have. | A small generic starter (`generic/`), with the competition and data parts as optional `profiles/`. The embedded template is the third profile. |
+| 5 | `/start` had no agreed stop condition, and `/wrap` rewrote several files every session. | The inner loop is where tokens go; it needs an objective end. Wrap overhead matters when sessions are short. | The plan must name **done when:** a command. `/wrap` only touches files with something new and lists the files changed. |
+| 6 | The guide said pi accepts a Claude Pro/Max subscription login. | Your notes say it doesn't run on the plan, and that is right in effect: Anthropic bills third-party harnesses separately. | GUIDE §B3 corrected; SHORT-LOOP §4 explains which agent for which billing. |
+| 7 | The kit called you a beginner. | Your own notes say embedded systems engineer. | Corrected in the instructions the agents read (`/define`, the kit's AGENTS.md, the planning-chat text). |
+
+Full argument for items 3–5: `docs/SHORT-LOOP.md` §8.
 
 ## Pass 3 (November 2026): bugs reproduced and fixed, switch to pi
 
@@ -40,8 +58,8 @@ mapped from the three videos onto your two laptops and two boards.
 
 Nothing here has run on real hardware. In the order you will meet them:
 
-1. **pi and the prompt templates.** After `setup-user.sh`, start `pi` in a project
-   and type `/` : `/define`, `/commission` and the others should be offered. If
+1. **pi and the slash commands.** After `setup-user.sh`, start `pi` in a project
+   and type `/` : `/start`, `/wrap`, `/define` and the others should be offered. If
    not, see troubleshooting.
 2. **The serial tool against a real board.** Everything in the loop goes through
    it. `/commission` exercises it step by step; the first one may need fixes.
@@ -62,7 +80,7 @@ Nothing here has run on real hardware. In the order you will meet them:
 ## Not changed, on purpose
 
 - **No Wi-Fi/MQTT code in the template.** The first project that needs it writes
-  it through `/define` → `/build-loop`, with bench tests. The fixtures
+  it through `/define` → `/start`, with bench tests. The fixtures
   (`wifi_ap`, `mqtt_broker`, `device.wait_for`) are in place.
 - **No ESP-IDF switch yet.** Arduino + arduino-cli is the right level for now.
 - **The polkit rule is still broad** (all NetworkManager actions for `embdev`).

@@ -11,7 +11,7 @@ to do physically.
 1. **Toolchain**: `arduino-cli version`, `arduino-cli core list` (esp32 present at the version in
    the Makefile), `arduino-cli lib list` (GFX Library for Arduino). If missing: `make deps`.
 2. **Host tests**: `make host-test`.
-3. **Compile**: `make compile`. Note the binary size from `make size` in `docs/NOTES.md`.
+3. **Compile**: `make compile`. Keep the binary size from `make size` for the history entry.
 4. **Board connected**: `make boards`. Expect a `303A:1001` (Espressif USB) device. If nothing:
    ask the owner to check the USB-C cable is a *data* cable, try another port, and that `id`
    shows the `dialout` group (log out/in after setup).
@@ -24,7 +24,7 @@ to do physically.
    for the BOOT/RESET sequence (hold BOOT, tap RESET, release BOOT) and retry once.
 7. **Serial link**: `make open-check`. It must print `OPENCHECK:OK`. If it prints
    `OPENCHECK:RESETS`, opening the serial port restarts the board: stop, tell the owner, and note
-   it in `docs/NOTES.md` (see "Board restarts when the port is opened" in the Embed_WF
+   it under "Broken" in `PROGRESS.md` (see "Board restarts when the port is opened" in the Embed_WF
    troubleshooting page). Single commands still work, but multi-step bench tests can't be trusted
    until that is fixed.
 8. **Target tests**: `make target-test`. All must pass, including `T-BOOT` (setup done in < 3 s)
@@ -33,7 +33,7 @@ to do physically.
 9. **Second board**: ask the owner to plug in the other board (it may stay plugged in next to the
    first one), register it (step 5), then repeat 6–8 with `BOARD=<its letter>` on every make
    command. The GT911 (C) code is unverified — if `T-TOUCH` fails on C or touch coordinates are
-   wrong, fix it now, record what you learned in `docs/NOTES.md` and suggest copying it into the
+   wrong, fix it now, keep what you learned for the history entry and suggest copying it into the
    board file.
 10. **Touch sanity (manual)**: ask the owner to tap the four corners while you run
     `make monitor SECS=20`; check `[touch] press x=.. y=..` values are near the corners. For R,
@@ -49,5 +49,7 @@ to do physically.
 13. **CI**: if the repo is on GitHub, `git push` (ask first) and check with `gh run list -L 1` /
     `gh run watch` that the `firmware` workflow is green.
 
-Finish: tick Phase 0 items in `docs/PLAN.md`, add a dated commissioning entry to `docs/NOTES.md`,
-commit `"Phase 0: commissioning"`. Next step for the owner: `/build-loop`.
+Finish: tick the Phase 0 items in `docs/PLAN.md` that passed. Then tell the owner the result in
+5 lines or fewer and to type `/wrap`, which writes the commissioning entry (binary size, the
+`make info` line of each board, anything learned) to `docs/history.md` and sets the next step
+in `PROGRESS.md`: `/start` on the first item of Phase 1.

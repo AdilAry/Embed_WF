@@ -12,17 +12,29 @@ tmux new -s work        # or: tmux attach -t work
 
 VS Code: `F1` → *Remote-SSH: Connect to Host* → open `~/projects/<name>`.
 
-## Project lifecycle (in pi)
+## The short loop (every session, any project)
+
+| Step | Type | Your part |
+|---|---|---|
+| Begin one task | `/start` (takes "Next" from PROGRESS.md), or `/start REQ-010`, `/start fix the export` | read the 5-bullet plan and its **done when**; correct it or say OK |
+| Work | nothing: the agent loops on its own until "done when" passes | answer when it stops and asks |
+| End | `/wrap` | check what it tells you to check |
+| Next task | `/new`, then `/start` | |
+| Fresh-eyes review | `/judge` in a **new** session (`/judge final` at the end) | pick which issues get fixed |
+
+Around 40% context: finish the step and `/wrap`. Wrong path: go back (`/tree`) instead of correcting.
+
+## Project lifecycle (embedded)
 
 | Step | Type |
 |---|---|
 | New project | `new-embedded-project <name>` in the shell, or `/new-project <name>` |
-| Idea → spec → plan | write `docs/IDEA.md`, then `/define` |
-| Prove the setup | `/commission` |
-| Build the next phase | `/build-loop` |
+| Idea → spec → plan | write `docs/IDEA.md`, then `/define`, then `/wrap` |
+| Prove the setup | `/commission`, then `/wrap` |
+| Build one plan item | `/start` … `/wrap` |
 | Add a part | put the PDF in `datasheets/`, then `/datasheet <file>.pdf` |
-| Change something | `/change-request <what>` |
-| End of session | `/wrap-up` |
+| Change something | `/change-request <what>`, `/wrap`, then `/start` on the new item |
+| Any other software project | `new-project <name>` in the shell (see SHORT-LOOP.md) |
 | Resume last session | `pi -c` (latest) or `pi -r` (pick one) |
 
 ## make targets (in a project)
@@ -69,10 +81,10 @@ bench-ble-scan [--name X] [-s 10]
 
 ## Prompts that work well (plain words are fine)
 
-- "Implement phase 2 from the plan."
+- "/start" and then, to the plan it proposes: "OK, but do the parser test first."
 - "The display flickers when the temperature updates. Add debugging, find out why, fix it."
 - "Add a host test for the case where the sensor returns 0xFFFF."
-- "Explain what `src/hal/touch.cpp` does like I'm new to embedded."
+- "Explain what `src/hal/touch.cpp` does, briefly."
 - "What would you test that the FSD doesn't cover yet?"
 - "Show me `make trace` and explain every line that isn't PASS."
 - "Break the wrap logic on purpose and show me the test catches it, then undo it."

@@ -53,8 +53,11 @@ itself can't run.
 | Symptom | Fix |
 |---|---|
 | `pi: command not found` | Open a new terminal (PATH). Otherwise re-run `bash ~/Embed_WF/devbox/setup-user.sh`. |
-| Commands like `/define` don't appear | `ls ~/.pi/agent/prompts` should list `define.md`, `commission.md` and the others. If not, re-run setup-user.sh. In a running pi, `/reload` picks them up. |
-| I edited a file in `Embed_WF/prompts/` and nothing changed | They are copied, not linked. Re-run setup-user.sh, then `/reload`. |
+| Commands like `/start` don't appear | `ls ~/.pi/agent/prompts` should list `start.md`, `wrap.md`, `define.md` and the others. If not, run `bash ~/Embed_WF/tools/install-workflow.sh`. In a running pi, `/reload` picks them up. |
+| I edited a file in `Embed_WF/prompts/` and nothing changed | They are copied, not linked. Run `bash ~/Embed_WF/tools/install-workflow.sh`, then `/reload`. |
+| The agent starts coding before I said OK | `/start` forbids that. Say "stop, show me the plan first". If it keeps happening, the task was given as plain text instead of through `/start`. |
+| A session got long and vague | That is context rot. `/wrap` (it records exactly where things stand), `/new`, `/start`. |
+| `PROGRESS.md` keeps growing or contradicts itself | It is a snapshot, not a log. Ask for "rewrite Now and Next from scratch, move finished work to docs/history.md", or do it by hand. |
 | "No model" / asks to log in | `/login`, choose your provider, then `/model`. |
 | Out of quota or credit | Wait for the quota window, or top up. See GUIDE §7 for ways to use less. |
 | The agent ran something I didn't expect | That is how pi works: it never asks first. `Esc` stops it. This is why it runs as `embdev` on the spare machine (GUIDE §6). |

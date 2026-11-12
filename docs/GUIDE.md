@@ -68,15 +68,26 @@ arduino-cli and pi. The model itself runs in the cloud.
 | 4 GitHub | history + protection | every project is a repo; CI compiles each push |
 | 5 Execution control | agent runs commands itself | pi does this by default, with no permission prompts |
 | 6 Dev VM | isolate the agent | `embdev` user on the T480s |
-| 7 Parallel projects + memory | one folder per project, an instructions file as memory | `~/projects/<name>/`, each with its own `AGENTS.md`, `PLAN.md`, `NOTES.md` |
+| 7 Parallel projects + memory | one folder per project, an instructions file as memory | `~/projects/<name>/`, each with its own `AGENTS.md`, `PROGRESS.md`, `docs/history.md` |
 | 8 CLI build/flash/monitor | agent sees compiler + serial output | `make loop`, `tools/esp_serial.py` |
 | 9 Datasheets | agent reads PDFs | `datasheets/` + `/datasheet` |
 | 10 Beyond Arduino | ESP-IDF | later, see §9 |
 
 Video 3 adds the **harness**, the closed loop
-*spec → test → code → build → flash → test → fix*. In this repo that's the
-commands `/define` → `/commission` → `/build-loop`, driven by the `make` targets
-and the four test tiers (host → target → bench → field). See [testing.md](testing.md).
+*spec → test → code → build → flash → test → fix*. In this repo that loop runs
+*inside* one short session: `/define` and `/commission` once, then
+`/start <one plan item>` … `/wrap`, again and again. It is driven by the `make`
+targets and the four test tiers (host → target → bench → field). See
+[testing.md](testing.md).
+
+**Where this differs from the video on purpose.** The video lets the agent run a
+whole phase and comes back after lunch. Here the unit is one plan item per
+session, with two gates that are yours: you approve a five-bullet plan before any
+file changes, and you check the result before the next item starts. The agent
+still iterates on its own between the gates, against the tests. That costs
+fewer tokens (every session starts small and ends before the context rots) and
+keeps you in the loop by design. The method is the short-loop workflow in
+[SHORT-LOOP.md](SHORT-LOOP.md); the embedded parts are a profile on top of it.
 
 A word on the word: video 3's "harness" is the whole coupling of agent, method and
 test bench. **pi** is an *agent harness*, the program that lets a model edit files
@@ -94,17 +105,20 @@ Embed_WF/
 │   ├── cheatsheet.md       daily commands and prompts
 │   ├── testing.md          the four test tiers explained
 │   ├── troubleshooting.md
-│   └── planning-chat.md    using a chat app for the thinking part
+│   ├── planning-chat.md    using a chat app for the thinking part
+│   └── SHORT-LOOP.md       the session method every project here uses
 ├── hardware/
 │   ├── machines.md         your laptops and their roles
 │   └── boards/guition-jc4827w543.md   board reference (your file); copied into every project
 ├── devbox/
 │   ├── setup-root.sh       part 1: packages, embdev user, permissions (run with sudo)
-│   └── setup-user.sh       part 2: arduino-cli, ESP32 core, pi, prompt templates, bench tools
+│   └── setup-user.sh       part 2: arduino-cli, ESP32 core, pi, short-loop workflow, bench tools
 ├── bench/                  bench-wifi, bench-mqtt, bench-ble-scan (the "test lab")
-├── prompts/                pi prompt templates = the slash commands /new-project /define
-│                           /commission /build-loop /datasheet /change-request /wrap-up
-├── tools/new_project.sh    creates ~/projects/<name> from the template
+├── prompts/                the slash commands, for pi and Claude Code alike: /start /wrap /judge
+│                           (any project) + /define /commission /datasheet /change-request /new-project
+├── tools/                  new_project.sh (creates ~/projects/<name>), install-workflow.sh
+├── user-level/AGENTS.md    your "How I work" file, installed once per machine
+├── generic/, profiles/     the same short loop for non-embedded projects (SHORT-LOOP.md)
 ├── tests/                  tests for the template's Python tools (run by CI)
 └── template/               a complete, working starter project (see below)
 ```
@@ -233,9 +247,11 @@ bash ~/Embed_WF/devbox/setup-user.sh
 ```
 
 This installs arduino-cli, the ESP32 core (≈ 1 GB, pinned to 3.3.10) and Arduino_GFX
-(1.6.8). It also installs **pi**, copies the prompt templates into
-`~/.pi/agent/prompts/` (that is what makes `/define`, `/build-loop` and friends
-exist), and installs the `bench-*` commands and `new-embedded-project`.
+(1.6.8). It also installs **pi** and the short-loop workflow: the slash commands
+go to `~/.pi/agent/prompts/` (that is what makes `/start`, `/wrap`, `/define` and
+friends exist) and your "How I work" file to `~/.pi/agent/AGENTS.md`. Open that
+file once and fill its one bracket. Last, it installs the `bench-*` commands,
+`new-embedded-project` and `new-project`.
 
 Open a **new** terminal and connect pi to a model:
 
@@ -243,9 +259,19 @@ Open a **new** terminal and connect pi to a model:
 pi
 ```
 
-Type `/login`, pick your provider and follow the prompts. pi accepts a
-subscription login (Claude Pro/Max, ChatGPT Plus/Pro, GitHub Copilot) or an API
-key from most providers. Then `/model` to choose the model, and `/quit` when done.
+Type `/login`, pick your provider and follow the prompts: an OpenAI (ChatGPT)
+login, GitHub Copilot, or an API key from most providers. Then `/model` to choose
+the model, and `/quit` when done.
+
+**About Claude and pi.** A Claude Pro/Max plan's usage limits do not cover pi.
+Anthropic bills third-party harnesses separately (extra usage or API rates; the
+terms changed several times during 2026, so check the current ones before you
+count on it). If you want Claude models on your subscription, use Claude Code.
+The projects don't care: each has an `AGENTS.md` for pi and a one-line
+`CLAUDE.md` that makes Claude Code read the same file, and
+`tools/install-workflow.sh` installs the same slash commands for both. See
+[SHORT-LOOP.md](SHORT-LOOP.md) §4. If you do run Claude Code on the dev box, run
+it as `embdev` too.
 
 ### B4. Smoke test with a board
 
@@ -324,19 +350,34 @@ new-embedded-project desk-clock
 3. If you add a part (a sensor), drop its PDF into `datasheets/` and run
    **`/datasheet bme280.pdf`**.
 4. **`/commission`** (quick this time: the boards are already registered).
-5. **`/build-loop`**. The agent implements phase 1: tests first, then code, then
-   host test → compile → flash → boot check → target test → fix → repeat. It
-   stops and asks when it needs your hands (wiring, a board that isn't plugged
-   in) or when a decision isn't covered by the FSD.
-6. Check the result on the real device yourself. That's the human's half of the
-   job.
-7. **`/wrap-up`** updates the docs, commits and pushes.
-8. Next session: `pi` in the folder → `/build-loop` again. `AGENTS.md`,
-   `PLAN.md` and `NOTES.md` give it back its memory. `pi -c` continues the last
-   conversation, `pi -r` lets you pick an older one.
+
+Each of the steps above is its own session: end it with **`/wrap`**, then
+`/new`. From here on, every session has the same shape:
+
+5. **`/start`** (it takes "Next" from `PROGRESS.md`; or name the item:
+   `/start REQ-010`). The agent reads that plan item and its FSD rows and replies
+   with at most five bullets: steps, files, and **done when:**
+   `make trace RUN=1 REQS="REQ-010"`. Correct it or say OK. Nothing has changed
+   yet.
+6. The agent works that one item: tests first, then code, then host test →
+   compile → flash → boot check → target test → fix → repeat, until the trace
+   gate is green. It stops and asks when it needs your hands (wiring, a board
+   that isn't plugged in), when it would have to leave the plan, or when a
+   decision isn't covered by the FSD.
+7. **`/wrap`**. It runs the checks, rewrites `PROGRESS.md`, records the finished
+   item in `docs/history.md`, refreshes `docs/STATUS.md`, commits and pushes, and
+   tells you what to look at. Check the result on the real device yourself.
+   That's the human's half of the job.
+8. `/new` (or quit and start `pi` again), then **`/start`** for the next item.
+   The fresh session knows where it is from `PROGRESS.md` alone.
+
+Every few items, and before you call the project done, run **`/judge`** in a
+fresh session: it reviews the firmware against the FSD without having built it,
+and ranks what it finds by value per hour of fixing.
 
 Want something changed later? **`/change-request` the clock should also show the
-weekday**. The spec gets updated first, then the code.
+weekday**. The spec and plan get updated in that session; the code is the next
+`/start`.
 
 ---
 
@@ -372,7 +413,7 @@ Rules of thumb:
 - The rules the agent is asked to follow are in the template's `AGENTS.md`:
   credentials only in the git-ignored `firmware/src/secrets.h`; tests never touch
   your home Wi-Fi or your real Home Assistant MQTT (they use `bench-wifi` and
-  `bench-mqtt`); `git push` only when you ask, or in `/wrap-up`; never edit the
+  `bench-mqtt`); `git push` only in `/wrap` or when you ask; never edit the
   result files under `build/`. Those are instructions, not locks.
 
 ---
@@ -382,10 +423,13 @@ Rules of thumb:
 Whether you pay per token or have a subscription with a quota, coding agents read
 a lot. To stretch it:
 
-- **One task per conversation.** `/new` starts a fresh one when you switch
-  topics. `/compact` shrinks a long one.
-- **Let the files be the memory**, not the chat. That's what `PLAN.md` and
-  `NOTES.md` are for. A fresh session with good files beats a bloated old one.
+- **One task per session.** That is the whole method: `/start`, work, `/wrap`,
+  `/new`. A long session re-reads everything it has already said on every turn.
+  `/compact` only rescues a session you can't end yet.
+- **Let the files be the memory**, not the chat. That's what `PROGRESS.md` (a
+  snapshot under 60 lines, rewritten every `/wrap`) and `docs/history.md` (read
+  only when asked)
+  are for. A fresh session with good files beats a bloated old one.
 - **Fast tiers first.** Host tests cost almost nothing. Flashing and long serial
   captures cost more tokens (the output is read). The template is built around
   this.
@@ -430,8 +474,8 @@ that every test named there exists, and shows the last result of each:
 `NO TEST` means "specified but not proven", the to-do list. `STALE` means the
 test passed, **but on older code**: every result carries a fingerprint of the
 source it ran against, and the firmware reports the fingerprint it was built
-from, so a pass can't outlive the code it tested. `/build-loop` won't tick a plan
-item until `make trace RUN=1 REQS="…"` says `TRACE:OK`, and `/wrap-up` saves the
+from, so a pass can't outlive the code it tested. It is the **Done gate**: `/wrap` won't tick a plan
+item until `make trace RUN=1 REQS="…"` says `TRACE:OK`, and it saves the
 table as `docs/STATUS.md`. That table is your answer to "is it done?". Read it
 and the FSD; you don't need to read the code.
 
@@ -483,7 +527,9 @@ and only turns PASS after a run on each.
 - **Agent harness**: the program around the model that gives it those hands. Here: **pi**.
 - **pi**: an open-source terminal coding agent (pi.dev). Works with many model providers. Never asks before running a command.
 - **AGENTS.md**: a file pi reads automatically at the start of every session in that folder. It's the project's standing instructions.
-- **Prompt template**: a reusable instruction file, invoked as `/name`. Ours live in `prompts/` and are copied to `~/.pi/agent/prompts/`.
+- **Slash command / prompt template**: a reusable instruction file, invoked as `/name`. Ours live in `prompts/`; `tools/install-workflow.sh` copies them to pi (`~/.pi/agent/prompts/`) and Claude Code (`~/.claude/commands/`).
+- **Short loop**: one task per session, with files (`PROGRESS.md` first) carrying the memory to the next one. See SHORT-LOOP.md.
+- **Done gate**: the command a task must pass before it counts as finished. Here: `make trace RUN=1 REQS="…"`.
 - **FSD**: Functional Specification Document. What the product must do, as testable requirements.
 - **FQBN**: Fully Qualified Board Name, arduino-cli's string for "board + all Tools menu settings".
 - **CI**: Continuous Integration. GitHub compiles and tests every push on its own servers.

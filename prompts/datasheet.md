@@ -28,3 +28,5 @@ File: `datasheets/$ARGUMENTS` (if empty, process every PDF in `datasheets/` with
    say so and recommend writing a small driver: register/frame decoding in `firmware/src/logic/`
    (host-testable with example values from the datasheet), bus access in `firmware/src/hal/`.
 6. Commit the `.txt` and `.summary.md`. Mention if the PDF is large (>10 MB) and should be git-ignored.
+   This command is a whole session on its own: it reads a lot, so the owner should clear the
+   session afterwards. Later sessions read the summary only.

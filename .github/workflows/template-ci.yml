@@ -41,6 +41,28 @@ jobs:
             head -1 "$f" | grep -qx -- '---' && grep -q '^description: ' "$f" || { echo "bad frontmatter: $f"; exit 1; }
           done
 
+      # The short loop only works while the files every session loads stay small.
+      - name: Always-loaded files stay within their budgets
+        run: |
+          check() { n=$(wc -l < "$1"); echo "$1: $n lines (max $2)"; [ "$n" -le "$2" ]; }
+          check AGENTS.md 120
+          check PROGRESS.md 60
+          check ../generic/AGENTS.md 80
+          check ../generic/PROGRESS.md 60
+          check ../user-level/AGENTS.md 50
+          for f in CLAUDE.md ../generic/CLAUDE.md; do
+            [ "$(cat "$f")" = "@AGENTS.md" ] || { echo "$f must contain only @AGENTS.md"; exit 1; }
+          done
+
+      - name: No references to retired commands or files
+        run: |
+          if grep -rn -e '/build-loop' -e '/wrap-up' -e 'NOTES\.md' \
+              ../prompts ../generic ../profiles ../user-level AGENTS.md PROGRESS.md README.md docs \
+              ../README.md ../docs/GUIDE.md ../docs/SHORT-LOOP.md ../docs/cheatsheet.md \
+              ../docs/testing.md ../docs/troubleshooting.md ../docs/planning-chat.md; then
+            echo "retired names are still referenced (see above)"; exit 1
+          fi
+
       - name: Host tests (tier 1)
         run: make host-test
 

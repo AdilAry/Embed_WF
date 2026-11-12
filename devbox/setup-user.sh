@@ -6,10 +6,10 @@
 #     bash ~/Embed_WF/devbox/setup-user.sh
 #
 # Installs: arduino-cli + ESP32 core + libraries, the pi coding agent (pi.dev),
-# the Embed_WF prompt templates (/define, /build-loop, ...), the bench-*
+# the short-loop workflow (/start, /wrap, /define, ...), the bench-*
 # commands, a Python venv for BLE.
-# Safe to run again. Run it again after `git pull` in ~/Embed_WF to refresh the
-# prompt templates.
+# Safe to run again. After `git pull` in ~/Embed_WF, tools/install-workflow.sh
+# alone refreshes the slash commands.
 set -euo pipefail
 
 if [[ $EUID -eq 0 ]]; then echo "Don't run this with sudo." >&2; exit 1; fi
@@ -57,16 +57,13 @@ if ! command -v pi >/dev/null; then
 fi
 command -v pi >/dev/null && pi --version || echo "open a new terminal, then run: pi --version"
 
-step "5/7 Embed_WF prompt templates -> pi (available in every project)"
-# pi turns every .md file in its prompts folder into a slash command:
-# define.md -> /define. Copied (not linked), so re-run this script after
-# changing a file in Embed_WF/prompts/.
-PI_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
-mkdir -p "$PI_DIR/prompts"
-for f in "$REPO"/prompts/*.md; do
-  cp "$f" "$PI_DIR/prompts/"
-  echo "  /$(basename "$f" .md)"
-done
+step "5/7 Short-loop workflow: slash commands + \"How I work\" file (every project)"
+# One source (prompts/, user-level/AGENTS.md), copied to each agent harness on
+# this machine. pi turns every .md file in its prompts folder into a slash
+# command: start.md -> /start. Copied, not linked, so after changing a file in
+# Embed_WF/prompts/ (or a `git pull`) run tools/install-workflow.sh again.
+mkdir -p "${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"   # so the installer sets pi up even before its first run
+bash "$REPO/tools/install-workflow.sh"
 
 step "6/7 bench commands -> $BIN"
 python3 -m venv --system-site-packages "$VENV"
@@ -81,7 +78,12 @@ exec "$VENV/bin/python" "$REPO/bench/bench-ble-scan" "\$@"
 EOF
 chmod +x "$BIN/bench-ble-scan"
 ln -sfn "$REPO/tools/new_project.sh" "$BIN/new-embedded-project"
-echo "  bench-wifi, bench-mqtt, bench-ble-scan, new-embedded-project"
+cat >"$BIN/new-project" <<EOF
+#!/usr/bin/env bash
+exec "$REPO/tools/new_project.sh" --generic "\$@"
+EOF
+chmod +x "$BIN/new-project" "$REPO/tools/new_project.sh" "$REPO/tools/install-workflow.sh"
+echo "  bench-wifi, bench-mqtt, bench-ble-scan, new-embedded-project, new-project"
 
 step "7/7 Checks"
 id -nG | grep -qw dialout && echo "dialout: ok" || echo "dialout: NOT active yet - log out and back in"
