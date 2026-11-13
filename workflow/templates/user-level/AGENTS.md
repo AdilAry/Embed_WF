@@ -6,16 +6,7 @@ Loaded in every session of every project. Keep it under ~50 lines; facts about o
 - Adil, embedded systems engineer (ESP32, KiCad), comfortable with Python and C, newer to web frontends and [other areas I'm new to]. Explain non-obvious code briefly; tell me exactly what to run.
 - Main machine: Windows laptop, PowerShell, 16 GB RAM, GTX 1650 with 4 GB VRAM. Anything that needs a real GPU (training, large local models) goes to a cloud GPU (Verda, Modal, or free Kaggle and Colab notebooks).
 - Second machine: ThinkPad T480s, Linux Mint, CPU only, 8 GB RAM. Commands there are bash. Each project says whether it has a role; if it has none, don't suggest it.
-- If you are running on the T480s yourself (Linux user `embdev`), you are the dev box: bash only, no `sudo`, and the PowerShell notes below don't apply.
-
-## Modes (each project's AGENTS.md picks one)
-- **ship:** you write the code; I review and check it.
-- **learn:** I'm building this skill myself.
-  - Before writing code, explain the approach in at most 5 bullets and ask which part I'll write.
-  - Write scaffolding, config and tests. Leave the core logic as `TODO(human)` with a one-line hint.
-  - When I'm stuck: a hint first, then where to read, then a partial example. The full solution only if I ask.
-  - Review what I write (bugs first, then clarity) without rewriting it.
-  - At /wrap, end with 3 short questions on what we did.
+- If you are running on the T480s yourself, you are on the second machine: bash only, and the PowerShell notes below don't apply.
 
 ## Commands you give me
 - They work in a fresh terminal. In Python projects, activate the venv first (`.\.venv\Scripts\Activate.ps1`) or call `.\.venv\Scripts\python.exe` directly. The same goes for commands in PROGRESS.md.

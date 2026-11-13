@@ -4,6 +4,7 @@ You write specifications and tests. An AI agent (**pi**, or Claude Code) writes 
 firmware, builds it, flashes the board, reads the serial output, runs the tests
 and fixes its own mistakes, until the tests pass: one plan item per short
 session, with you approving the plan before and checking the result after.
+Nothing counts as finished until you have checked it.
 
 Built for: the pi coding agent with the model provider of your choice, a Windows
 laptop to supervise from, an old Linux Mint laptop as the agent's sandbox and
@@ -23,10 +24,8 @@ verified → [docs/REVIEW.md](docs/REVIEW.md)
 | [docs/REVIEW.md](docs/REVIEW.md) | Review history: findings, fixes, what still needs your boards |
 | [hardware/](hardware/) | Your machines and the board reference |
 | [template/](template/) | Starter project: working firmware, tests, serial tool, requirement tracing (`make trace`), CI |
-| [docs/SHORT-LOOP.md](docs/SHORT-LOOP.md) | The session method: one task per session, `/start` … `/wrap`, files as memory. Works for any software project |
-| [prompts/](prompts/) | The slash commands, one source for pi and Claude Code: `/start` `/wrap` `/judge` (any project) and `/define` `/commission` `/datasheet` `/change-request` `/new-project` (embedded) |
-| [user-level/](user-level/) | Your "How I work" file, installed once per machine |
-| [generic/](generic/), [profiles/](profiles/) | Starter for non-embedded projects, plus optional competition and data blocks |
+| [workflow/](workflow/) | The short-loop workflow for **any** software project: [WORKFLOW.md](workflow/WORKFLOW.md) (the method), `/start` `/wrap` `/judge`, your "How I work" file, a generic project starter. Self-contained; `tools/build-workflow-zip.sh` packs it as a zip for use elsewhere |
+| [prompts/](prompts/) | The embedded slash commands: `/define` `/commission` `/datasheet` `/change-request` `/new-project` |
 | [devbox/](devbox/) | Setup scripts for the Linux dev box |
 | [bench/](bench/) | Test-bench commands: Wi-Fi hotspot, MQTT broker, BLE scan |
 

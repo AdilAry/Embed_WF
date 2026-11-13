@@ -22,6 +22,8 @@ testable and names the fastest test tier that can prove it**.
    entered: captive portal / serial / compile-time); MQTT or Home Assistant; BLE; external sensors
    and which free pins (only from the board file's header table, flag ADC2/strapping pins);
    power (USB / LiPo); persistence (NVS); OTA (needs `PartitionScheme=default`);
+   whether the board drives anything that can move, heat, switch mains or charge a battery
+   (always ask this one: it decides whether you may flash without asking, FSD §3);
    behaviour on errors (Wi-Fi lost, broker down, sensor missing, bad input);
    what "done" means for the owner.
 
@@ -53,7 +55,9 @@ testable and names the fastest test tier that can prove it**.
    names the REQ IDs it covers.
 
 7. Run `make trace`. The new requirements show `NO TEST` — that is the to-do list.
-   Fix anything shown as `BAD TIER` or a duplicate ID.
+   Fix anything shown as `BAD TIER` or a duplicate ID. A requirement only a person can judge
+   (readable, feels right, looks right on the screen) is tier `manual`: those are what the
+   owner checks before an item counts as finished.
 
 8. Fill the **What** line in `AGENTS.md` (one line) and replace `[project name]` in its title.
    Then tell the owner to type `/wrap`: it rewrites `PROGRESS.md` (next step: `/commission`

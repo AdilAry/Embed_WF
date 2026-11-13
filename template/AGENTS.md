@@ -4,7 +4,6 @@ Loaded in every session, by whichever agent runs here (pi reads this file; Claud
 
 ## Project
 - **What:** [one line, filled in by /define].
-- **Mode:** ship. The modes are defined in the owner's user-level file.
 - **Boards:** two Guition JC4827W543 (ESP32-S3): one **R** (resistive XPT2046), one **C** (capacitive GT911). Code must work on both unless `docs/FSD.md` says otherwise.
 - **Dev box:** you run on the ThinkPad T480s as user `embdev`. The boards are on its USB ports; its Wi-Fi, MQTT broker and Bluetooth are the test bench.
 
@@ -12,7 +11,8 @@ Loaded in every session, by whichever agent runs here (pi reads this file; Claud
 - Arduino (arduino-esp32 core 3.x) built with arduino-cli. Use the make targets below; never improvise long arduino-cli lines.
 - **Check:** `make check` (host tests + firmware compile).
 - **Done gate:** `make trace RUN=1 REQS="<the task's REQ IDs>"` prints `TRACE:OK`. That means: each of those requirements names a test, the test exists, and it passed **on the current code**.
-- **Push:** in /wrap. GitHub CI compiles every push; nothing is deployed.
+- **Run limit:** 10 runs of `make loop`, `make target-test` or `make bench-test` in one session without the task's tests passing. Then stop and report. `make host-test` doesn't count: it is cheap, run it often.
+- **Push:** in /wrap. GitHub CI compiles every push; nothing is deployed. Pushing is not finishing: an item awaiting the owner's check is pushed unticked.
 
 ```
 make host-test     # tier 1: logic on the PC, seconds
@@ -37,12 +37,13 @@ make boards        # connected boards and which is registered as R / C
   4. `make compile`. Fix errors and new warnings.
   5. `make upload && make boot-check && make target-test`, then `make bench-test` if the item has bench requirements. On a failure read the output and `build/serial.log`, form one hypothesis, add `Serial.printf("[subsystem] ...")` if unsure, fix, rerun.
   6. Run the Done gate. `STALE` means the source changed after that tier last ran: rerun the tier, don't argue with it.
-- Stop and ask the owner when: a test needs a physical action (wiring, a board that isn't plugged in, a button); the same failure survives 3 different fixes; a requirement is ambiguous, contradicts another, or you want to change the FSD (that is `/change-request`).
+- Stop and ask the owner when: a test needs a physical action (wiring, a board that isn't plugged in, a button); the same failure survives 3 different fixes; the Run limit is reached; a requirement is ambiguous, contradicts another, or you want to change the FSD (that is `/change-request`).
+- **Flashing a board that drives something.** A bare board on USB may be flashed without asking. If FSD §3 says the board drives anything that can move, heat, switch mains or charge a battery (motor, relay, heater, pump, a load on a free pin), put "this session flashes the board" in the /start plan and flash only after the owner's OK for this session. The firmware must leave those outputs off at boot and during `selftest`.
 
 ## At /wrap also
 - `python3 tools/trace.py --out docs/STATUS.md`, and name every row that is `STALE` or `NOT RUN` in your reply: those are not proven for the code being committed.
 - Something true for the **board**, not just this project (a pin quirk, a library bug, a proven init sequence): show the owner the text and suggest adding it to `~/Embed_WF/hardware/boards/`.
-- List the `field` / `manual` requirements of this item: the owner checks those on the real device.
+- An item has **checks only the owner can do** if it covers a `field` or `manual` requirement or changes what is on the screen (no test can see the display). Such an item stays "awaiting my check" as /wrap describes: name each thing to look at on the real device, and what the owner should see.
 
 ## Read only when needed
 | File | Read when |

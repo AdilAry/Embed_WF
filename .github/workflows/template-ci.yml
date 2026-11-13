@@ -37,7 +37,7 @@ jobs:
 
       - name: Prompt templates have frontmatter with a description
         run: |
-          for f in ../prompts/*.md; do
+          for f in ../prompts/*.md ../workflow/templates/commands/*.md; do
             head -1 "$f" | grep -qx -- '---' && grep -q '^description: ' "$f" || { echo "bad frontmatter: $f"; exit 1; }
           done
 
@@ -47,21 +47,33 @@ jobs:
           check() { n=$(wc -l < "$1"); echo "$1: $n lines (max $2)"; [ "$n" -le "$2" ]; }
           check AGENTS.md 120
           check PROGRESS.md 60
-          check ../generic/AGENTS.md 80
-          check ../generic/PROGRESS.md 60
-          check ../user-level/AGENTS.md 50
-          for f in CLAUDE.md ../generic/CLAUDE.md; do
+          check ../workflow/templates/project/AGENTS.md 120
+          check ../workflow/templates/project/PROGRESS.md 60
+          check ../workflow/templates/user-level/AGENTS.md 50
+          for f in CLAUDE.md ../workflow/templates/project/CLAUDE.md; do
             [ "$(cat "$f")" = "@AGENTS.md" ] || { echo "$f must contain only @AGENTS.md"; exit 1; }
           done
 
-      - name: No references to retired commands or files
+      - name: No references to retired commands, files or modes
         run: |
-          if grep -rn -e '/build-loop' -e '/wrap-up' -e 'NOTES\.md' \
-              ../prompts ../generic ../profiles ../user-level AGENTS.md PROGRESS.md README.md docs \
-              ../README.md ../docs/GUIDE.md ../docs/SHORT-LOOP.md ../docs/cheatsheet.md \
+          if grep -rn -e '/build-loop' -e '/wrap-up' -e 'NOTES\.md' -e 'SHORT-LOOP' \
+              -e 'learn mode' -e '\*\*Mode' -e 'TODO(human)' \
+              ../prompts ../workflow/templates ../workflow/install.sh ../workflow/new-project.sh \
+              AGENTS.md PROGRESS.md README.md docs \
+              ../README.md ../AGENTS.md ../docs/GUIDE.md ../docs/cheatsheet.md \
               ../docs/testing.md ../docs/troubleshooting.md ../docs/planning-chat.md; then
             echo "retired names are still referenced (see above)"; exit 1
           fi
+
+      # workflow/ is shipped on its own as a zip for non-embedded projects.
+      - name: The generic workflow stays free of embedded-kit terms, and its zip builds
+        run: |
+          if grep -rn -i -e 'Embed_WF/' -e 'make trace' -e 'make loop' -e 'FSD' -e 'esp_serial' \
+              -e 'docs/GUIDE' ../workflow/templates ../workflow/install.sh ../workflow/new-project.sh; then
+            echo "workflow/ must not depend on the embedded layer (see above)"; exit 1
+          fi
+          bash -n ../workflow/install.sh && bash -n ../workflow/new-project.sh
+          bash ../tools/build-workflow-zip.sh "$RUNNER_TEMP/short_loop_workflow.zip"
 
       - name: Host tests (tier 1)
         run: make host-test

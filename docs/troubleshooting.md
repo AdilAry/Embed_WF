@@ -54,7 +54,11 @@ itself can't run.
 |---|---|
 | `pi: command not found` | Open a new terminal (PATH). Otherwise re-run `bash ~/Embed_WF/devbox/setup-user.sh`. |
 | Commands like `/start` don't appear | `ls ~/.pi/agent/prompts` should list `start.md`, `wrap.md`, `define.md` and the others. If not, run `bash ~/Embed_WF/tools/install-workflow.sh`. In a running pi, `/reload` picks them up. |
-| I edited a file in `Embed_WF/prompts/` and nothing changed | They are copied, not linked. Run `bash ~/Embed_WF/tools/install-workflow.sh`, then `/reload`. |
+| I edited a command file in the kit and nothing changed | The commands are links, so the file is already current: `/reload` in a running pi, or start a new session. If you installed with `--copy`, run `bash ~/Embed_WF/tools/install-workflow.sh --copy` again. |
+| Linked commands are not offered | Install copies instead: `bash ~/Embed_WF/tools/install-workflow.sh --copy`. |
+| A session starts with more context than expected | A parent folder has its own `AGENTS.md` or `CLAUDE.md`: agents load those too. Projects belong in `~/projects/`, not inside `~/Embed_WF`. In Claude Code, `/context all` lists the files it loaded. |
+| The agent stopped at the Run limit | Ten flash-and-test runs without a pass means the item is too big or the cause is physical. `/wrap`, split the item in `docs/PLAN.md`, start fresh. |
+| "Waiting on me" keeps growing | Items there are not done until you look at the device and say so at the next `/start`. Check before starting more. |
 | The agent starts coding before I said OK | `/start` forbids that. Say "stop, show me the plan first". If it keeps happening, the task was given as plain text instead of through `/start`. |
 | A session got long and vague | That is context rot. `/wrap` (it records exactly where things stand), `/new`, `/start`. |
 | `PROGRESS.md` keeps growing or contradicts itself | It is a snapshot, not a log. Ask for "rewrite Now and Next from scratch, move finished work to docs/history.md", or do it by hand. |

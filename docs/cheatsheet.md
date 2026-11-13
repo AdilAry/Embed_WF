@@ -17,8 +17,8 @@ VS Code: `F1` → *Remote-SSH: Connect to Host* → open `~/projects/<name>`.
 | Step | Type | Your part |
 |---|---|---|
 | Begin one task | `/start` (takes "Next" from PROGRESS.md), or `/start REQ-010`, `/start fix the export` | read the 5-bullet plan and its **done when**; correct it or say OK |
-| Work | nothing: the agent loops on its own until "done when" passes | answer when it stops and asks |
-| End | `/wrap` | check what it tells you to check |
+| Work | nothing: the agent loops on its own until "done when" passes, or it hits a stop (left the plan, 3 failed fixes, Run limit of 10, needs your hands) | answer when it stops and asks |
+| End | `/wrap` | check what it tells you to check; a task with a check only you can do stays "awaiting my check" until you confirm it at the next `/start` |
 | Next task | `/new`, then `/start` | |
 | Fresh-eyes review | `/judge` in a **new** session (`/judge final` at the end) | pick which issues get fixed |
 
@@ -34,7 +34,7 @@ Around 40% context: finish the step and `/wrap`. Wrong path: go back (`/tree`) i
 | Build one plan item | `/start` … `/wrap` |
 | Add a part | put the PDF in `datasheets/`, then `/datasheet <file>.pdf` |
 | Change something | `/change-request <what>`, `/wrap`, then `/start` on the new item |
-| Any other software project | `new-project <name>` in the shell (see SHORT-LOOP.md) |
+| Any other software project | `new-project <name>` in the shell (see workflow/WORKFLOW.md) |
 | Resume last session | `pi -c` (latest) or `pi -r` (pick one) |
 
 ## make targets (in a project)

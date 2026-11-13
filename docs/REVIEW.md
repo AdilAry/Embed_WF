@@ -1,7 +1,28 @@
 # Review history of the Embed_WF kit
 
-Four passes so far. The newest is first. None of them has touched your real
+Five passes so far. The newest is first. None of them has touched your real
 boards or the T480s, so the last section is the list that matters most.
+
+## Pass 5 (November 2026): workflow v3, and an outside review
+
+Your revised template (modes removed, "done when", the run limit, owner checks)
+and eleven review points from an outside chat were merged. The generic workflow
+now lives in one folder, `workflow/`, which is also shipped as a standalone zip;
+the embedded layer builds on it.
+
+| # | Review point | Verdict | What was done |
+|---|---|---|---|
+| 1 | Learn mode can't coexist with a loop that runs until "done when" passes | Agree | Modes removed everywhere. Teaching is a per-task request with its own "done when" (WORKFLOW §8). |
+| 2 | No limit on context: add a stop after 10 runs without a pass | Agree, with one change | **Run limit** in each project's AGENTS.md, default 10. In embedded projects it counts flash-and-test runs, not `make host-test`, which is cheap and should run often. A count is only a proxy: one huge log costs more than ten quiet runs, so "look, don't dump" stays. |
+| 3 | The competition profile lost its time tracking | Agree; the cause was mine | Splitting the competition parts into a paste-in profile separated the rule from the commands that did the work. Profiles are gone: one template again, with `Competition` as a whole optional section that carries its own "At /start also" and "At /wrap also" steps. |
+| 4 | `/wrap` marks items done before you've checked them | Agree, extended | Items with a check only you can do stay "awaiting my check"; the next `/start` asks and records it. Not adopted: holding back the push. Pushing is not finishing, CI on the push is one of the checks, and nothing is deployed. |
+| 5 | Flashing without asking when the board drives something physical | Agree, per session not per upload | FSD §3 records whether the board drives anything that can move, heat, switch mains or charge a battery; `/define` always asks. If so, the plan says the session flashes and waits for your OK once. An OK per upload would end the loop. |
+| 6 | "Done when" for tasks with no code | Agree | A file, what it must say, and your approval. Never an invented check. |
+| 7 | Symlink the commands on Linux | Agree, with a fallback | Links are the default: pi's loader follows linked files (checked in its source). Claude Code's docs don't say, so `--copy` exists. The user-level file is still copied, never linked: it is yours to edit. Side effect to know: switching the kit to another branch changes the live commands. |
+| 8 | `history.md` still asks for time spent | Agree | Dropped; the `Competition` section adds it. |
+| 9 | pi does read `CLAUDE.md` | Agree; I had it wrong | Per folder pi loads one of `AGENTS.override.md`, `AGENTS.md`, `CLAUDE.md`, in that order. Wording fixed here and in the workflow guide. It weakens one of my earlier arguments for `AGENTS.md`, not the conclusion. |
+| 10 | pi loads parent folders' files too | Agree, as a check not a note | Both project generators refuse to create a project under a folder that has its own instruction file. |
+| 11 | The shim might make Claude Code load `AGENTS.md` twice | Disagree | Claude Code's docs say the import never causes a second read, and when both files exist only `CLAUDE.md` is read. From v2.1.277 `AGENTS.md` alone also works. The shim stays; `/context all` shows what was loaded. |
 
 ## Pass 4 (November 2026): the short loop
 
@@ -13,13 +34,13 @@ project in this kit is worked. The embedded workflow changed shape to fit it.
 |---|---|---|---|
 | 1 | The embedded kit ran long: `/build-loop` implemented a whole phase with no plan approval, the opposite of a short loop. | Long sessions cost more per step as context fills, and your only gates were physical actions and failures. | `/build-loop` and `/wrap-up` are gone. One plan item per session: `/start` proposes a plan and waits, the agent loops against the tests inside it, `/wrap` ends it. The closed test loop is still there, just bounded. |
 | 2 | The embedded kit had no current-state file. `docs/NOTES.md` was an append-only log the agent was pointed at every session. | That is the growing-file problem your workflow was written to fix. | `PROGRESS.md` (snapshot, rewritten every `/wrap`), `docs/history.md` (append-only, read on request) and `docs/decisions.md` replace `NOTES.md`. |
-| 3 | The short-loop workflow only ran under Claude Code (`CLAUDE.md`, `.claude/commands/` per project, `~/.claude/CLAUDE.md`). | pi is in use here, and pi reads none of those. | `AGENTS.md` is the instruction file, `CLAUDE.md` a one-line shim. One `prompts/` folder serves both agents; `tools/install-workflow.sh` installs it and the user-level file per machine. |
+| 3 | The short-loop workflow was set up for Claude Code only (`.claude/commands/` per project, `~/.claude/CLAUDE.md`). | pi does read a project's `CLAUDE.md`, but not the user-level file or the commands. | `AGENTS.md` is the instruction file, `CLAUDE.md` a one-line shim. One set of command files serves both agents; `tools/install-workflow.sh` installs it and the user-level file per machine. |
 | 4 | The project template was shaped by a hackathon data app; other project types had to delete most of it. | "Applies to most software work" by deletion is fragile, and the always-loaded file carried fields most projects don't have. | A small generic starter (`generic/`), with the competition and data parts as optional `profiles/`. The embedded template is the third profile. |
 | 5 | `/start` had no agreed stop condition, and `/wrap` rewrote several files every session. | The inner loop is where tokens go; it needs an objective end. Wrap overhead matters when sessions are short. | The plan must name **done when:** a command. `/wrap` only touches files with something new and lists the files changed. |
 | 6 | The guide said pi accepts a Claude Pro/Max subscription login. | Your notes say it doesn't run on the plan, and that is right in effect: Anthropic bills third-party harnesses separately. | GUIDE §B3 corrected; SHORT-LOOP §4 explains which agent for which billing. |
 | 7 | The kit called you a beginner. | Your own notes say embedded systems engineer. | Corrected in the instructions the agents read (`/define`, the kit's AGENTS.md, the planning-chat text). |
 
-Full argument for items 3–5: `docs/SHORT-LOOP.md` §8.
+Full argument for items 3–5: `workflow/WORKFLOW.md` §9. Item 4 was revised in pass 5.
 
 ## Pass 3 (November 2026): bugs reproduced and fixed, switch to pi
 

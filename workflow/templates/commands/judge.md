@@ -8,7 +8,7 @@ You are reviewing, not building. If this session wrote any of the code under rev
 and tell me to start a fresh one.
 
 1. Before opening the code, read the brief I attach. If nothing is attached, use the Project
-   section of AGENTS.md and the spec it points to. Take the role of the person in "For"; if
+   section of AGENTS.md and the plan or spec it points to. Take the role of the person in "For"; if
    there is none, a sceptical user who has to rely on this next week.
 2. Then open the repo. Run Check and, if the project has one, the whole Done gate. Use the
    product the way that person would. For anything you can't do yourself (hardware, a

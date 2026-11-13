@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# Create a new short-loop project from the Embed_WF kit.
+# Create a new ESP32 project from the Embed_WF template.
 #
-#   new-embedded-project <name> [parent-dir]     ESP32 project from template/
-#   new-project <name> [parent-dir]              any other software project, from generic/
-#                                                (same as: new_project.sh --generic <name>)
-#   default parent: ~/projects
+#   new-embedded-project <name> [parent-dir]      default parent: ~/projects
 #
-# Copies the starter, sets the project name, and makes the first git commit. Then:
-#   cd ~/projects/<name> && pi          embedded: type /define     generic: fill AGENTS.md, then /start M0
+# Copies template/, refreshes the board reference from hardware/boards/, sets
+# the project name, and makes the first git commit. Then:
+#   cd ~/projects/<name> && pi          and type  /define
+#
+# For any other kind of software project use the short-loop starter instead:
+#   new-project <name>                  (= workflow/new-project.sh)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
-KIND=embedded
-if [[ "${1:-}" == "--generic" ]]; then KIND=generic; shift; fi
+if [[ "${1:-}" == "--generic" ]]; then shift; exec bash "$REPO/workflow/new-project.sh" "$@"; fi
 NAME="${1:-}"
 PARENT="${2:-$HOME/projects}"
 
 if [[ ! "$NAME" =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
-  echo "usage: $(basename "$0") [--generic] <name> [parent-dir]" >&2
+  echo "usage: $(basename "$0") <name> [parent-dir]" >&2
   echo "  name: lowercase letters, digits, - and _ (it becomes the GitHub repo name)" >&2
   exit 1
 fi
@@ -33,20 +33,36 @@ if ! git config user.name >/dev/null || ! git config user.email >/dev/null; then
   exit 1
 fi
 
+# Agents also load instruction files from every PARENT folder of a project (pi
+# walks up to the filesystem root, Claude Code does the same for CLAUDE.md). A
+# project created inside this kit, or inside another project, would silently
+# get that folder's AGENTS.md as well. Refuse unless told otherwise.
 mkdir -p "$PARENT"
-if [[ "$KIND" == generic ]]; then
-  cp -r "$REPO/generic" "$DEST"
-  mkdir -p "$DEST/docs/notes"
-else
-  cp -r "$REPO/template" "$DEST"
-  rm -rf "$DEST/build"
-  rm -f "$DEST/firmware/src/build_id.h"   # generated per build, never copied
-  mkdir -p "$DEST/docs/hardware"
-  cp "$REPO"/hardware/boards/*.md "$DEST/docs/hardware/"
-  sed -i "s/^#define FW_NAME \".*\"/#define FW_NAME \"$NAME\"/" "$DEST/firmware/src/config.h"
-  sed -i "s/^# Functional Specification — <project name>/# Functional Specification — $NAME/" "$DEST/docs/FSD.md"
-  sed -i "1s/.*/# $NAME/" "$DEST/README.md"
+dir="$(cd "$PARENT" && pwd)"
+inherited=()
+while :; do
+  for f in AGENTS.override.md AGENTS.md CLAUDE.md; do
+    [[ -f "$dir/$f" ]] && inherited+=("$dir/$f")
+  done
+  [[ "$dir" == "/" ]] && break
+  dir="$(dirname "$dir")"
+done
+if [[ ${#inherited[@]} -gt 0 && "${ALLOW_PARENT_INSTRUCTIONS:-0}" != "1" ]]; then
+  echo "Not creating $DEST: a project there would also load these instruction files" >&2
+  echo "from its parent folders, in every session:" >&2
+  printf '  %s\n' "${inherited[@]}" >&2
+  echo "Choose a parent folder outside them, or set ALLOW_PARENT_INSTRUCTIONS=1 if that is intended." >&2
+  exit 1
 fi
+
+cp -r "$REPO/template" "$DEST"
+rm -rf "$DEST/build"
+rm -f "$DEST/firmware/src/build_id.h"   # generated per build, never copied
+mkdir -p "$DEST/docs/hardware"
+cp "$REPO"/hardware/boards/*.md "$DEST/docs/hardware/"
+sed -i "s/^#define FW_NAME \".*\"/#define FW_NAME \"$NAME\"/" "$DEST/firmware/src/config.h"
+sed -i "s/^# Functional Specification — <project name>/# Functional Specification — $NAME/" "$DEST/docs/FSD.md"
+sed -i "1s/.*/# $NAME/" "$DEST/README.md"
 # The short-loop files carry the name as a "[project name]" marker.
 grep -rl --exclude-dir=hardware -F '[project name]' "$DEST" | while read -r f; do
   sed -i "s/\[project name\]/$NAME/g" "$f"
@@ -55,16 +71,10 @@ done
 cd "$DEST"
 git init -q -b main
 git add -A
-git commit -q -m "Start $NAME from the Embed_WF $KIND starter"
+git commit -q -m "Start $NAME from the Embed_WF template"
 echo "Created $DEST"
 echo
 echo "Next:"
 echo "  cd $DEST"
-if [[ "$KIND" == generic ]]; then
-  echo "  fill in AGENTS.md and docs/plan.md; nothing may be left in [brackets]:"
-  echo "      grep -n '\\[' AGENTS.md docs/plan.md"
-  echo "  pi   (or: claude)          # then type: /start M0"
-else
-  echo "  \$EDITOR docs/IDEA.md      # write your idea in plain words"
-  echo "  pi                         # then type: /define"
-fi
+echo "  \$EDITOR docs/IDEA.md      # write your idea in plain words"
+echo "  pi                         # then type: /define"

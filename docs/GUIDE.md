@@ -87,7 +87,7 @@ file changes, and you check the result before the next item starts. The agent
 still iterates on its own between the gates, against the tests. That costs
 fewer tokens (every session starts small and ends before the context rots) and
 keeps you in the loop by design. The method is the short-loop workflow in
-[SHORT-LOOP.md](SHORT-LOOP.md); the embedded parts are a profile on top of it.
+[workflow/WORKFLOW.md](../workflow/WORKFLOW.md); the embedded parts are built on top of it.
 
 A word on the word: video 3's "harness" is the whole coupling of agent, method and
 test bench. **pi** is an *agent harness*, the program that lets a model edit files
@@ -106,7 +106,7 @@ Embed_WF/
 │   ├── testing.md          the four test tiers explained
 │   ├── troubleshooting.md
 │   ├── planning-chat.md    using a chat app for the thinking part
-│   └── SHORT-LOOP.md       the session method every project here uses
+│   └── REVIEW.md           what has been reviewed, changed and not yet verified
 ├── hardware/
 │   ├── machines.md         your laptops and their roles
 │   └── boards/guition-jc4827w543.md   board reference (your file); copied into every project
@@ -114,11 +114,13 @@ Embed_WF/
 │   ├── setup-root.sh       part 1: packages, embdev user, permissions (run with sudo)
 │   └── setup-user.sh       part 2: arduino-cli, ESP32 core, pi, short-loop workflow, bench tools
 ├── bench/                  bench-wifi, bench-mqtt, bench-ble-scan (the "test lab")
-├── prompts/                the slash commands, for pi and Claude Code alike: /start /wrap /judge
-│                           (any project) + /define /commission /datasheet /change-request /new-project
-├── tools/                  new_project.sh (creates ~/projects/<name>), install-workflow.sh
-├── user-level/AGENTS.md    your "How I work" file, installed once per machine
-├── generic/, profiles/     the same short loop for non-embedded projects (SHORT-LOOP.md)
+├── workflow/               the short-loop workflow for ANY software project: guide,
+│                           /start /wrap /judge, "How I work" file, generic project starter.
+│                           Also shipped on its own as a zip (tools/build-workflow-zip.sh)
+├── prompts/                the embedded slash commands: /define /commission /datasheet
+│                           /change-request /new-project
+├── tools/                  new_project.sh (creates ~/projects/<name>), install-workflow.sh,
+│                           build-workflow-zip.sh
 ├── tests/                  tests for the template's Python tools (run by CI)
 └── template/               a complete, working starter project (see below)
 ```
@@ -248,8 +250,9 @@ bash ~/Embed_WF/devbox/setup-user.sh
 
 This installs arduino-cli, the ESP32 core (≈ 1 GB, pinned to 3.3.10) and Arduino_GFX
 (1.6.8). It also installs **pi** and the short-loop workflow: the slash commands
-go to `~/.pi/agent/prompts/` (that is what makes `/start`, `/wrap`, `/define` and
-friends exist) and your "How I work" file to `~/.pi/agent/AGENTS.md`. Open that
+are linked into `~/.pi/agent/prompts/` (that is what makes `/start`, `/wrap`, `/define` and
+friends exist; linked, so a later `git pull` in `~/Embed_WF` updates them by itself) and your
+"How I work" file is copied to `~/.pi/agent/AGENTS.md`. Open that
 file once and fill its one bracket. Last, it installs the `bench-*` commands,
 `new-embedded-project` and `new-project`.
 
@@ -270,7 +273,7 @@ count on it). If you want Claude models on your subscription, use Claude Code.
 The projects don't care: each has an `AGENTS.md` for pi and a one-line
 `CLAUDE.md` that makes Claude Code read the same file, and
 `tools/install-workflow.sh` installs the same slash commands for both. See
-[SHORT-LOOP.md](SHORT-LOOP.md) §4. If you do run Claude Code on the dev box, run
+[WORKFLOW.md](../workflow/WORKFLOW.md) §6. If you do run Claude Code on the dev box, run
 it as `embdev` too.
 
 ### B4. Smoke test with a board
@@ -362,14 +365,22 @@ Each of the steps above is its own session: end it with **`/wrap`**, then
 6. The agent works that one item: tests first, then code, then host test →
    compile → flash → boot check → target test → fix → repeat, until the trace
    gate is green. It stops and asks when it needs your hands (wiring, a board
-   that isn't plugged in), when it would have to leave the plan, or when a
-   decision isn't covered by the FSD.
-7. **`/wrap`**. It runs the checks, rewrites `PROGRESS.md`, records the finished
-   item in `docs/history.md`, refreshes `docs/STATUS.md`, commits and pushes, and
-   tells you what to look at. Check the result on the real device yourself.
-   That's the human's half of the job.
+   that isn't plugged in), when it would have to leave the plan, when a decision
+   isn't covered by the FSD, when the same failure has survived three different
+   fixes, or after ten flash-and-test runs without a pass (the Run limit). A bare
+   board on USB is flashed without asking. If the FSD says the board drives
+   something that can move, heat, switch mains or charge a battery, the plan says
+   so and the agent flashes only after your OK for that session.
+7. **`/wrap`**. It runs the checks, rewrites `PROGRESS.md`, refreshes
+   `docs/STATUS.md`, commits and pushes, and tells you what to look at.
+   **Finished means checked by you.** An item with a `field` or `manual`
+   requirement, or one that changes the screen, is not ticked yet: it sits under
+   "Waiting on me" as "awaiting my check". Look at the real device. That's the
+   human's half of the job.
 8. `/new` (or quit and start `pi` again), then **`/start`** for the next item.
-   The fresh session knows where it is from `PROGRESS.md` alone.
+   The fresh session knows where it is from `PROGRESS.md` alone. It first asks
+   whether the item awaiting your check passed, and only then ticks it and
+   writes its history entry. One you reject becomes that session's task.
 
 Every few items, and before you call the project done, run **`/judge`** in a
 fresh session: it reviews the firmware against the FSD without having built it,
@@ -527,8 +538,8 @@ and only turns PASS after a run on each.
 - **Agent harness**: the program around the model that gives it those hands. Here: **pi**.
 - **pi**: an open-source terminal coding agent (pi.dev). Works with many model providers. Never asks before running a command.
 - **AGENTS.md**: a file pi reads automatically at the start of every session in that folder. It's the project's standing instructions.
-- **Slash command / prompt template**: a reusable instruction file, invoked as `/name`. Ours live in `prompts/`; `tools/install-workflow.sh` copies them to pi (`~/.pi/agent/prompts/`) and Claude Code (`~/.claude/commands/`).
-- **Short loop**: one task per session, with files (`PROGRESS.md` first) carrying the memory to the next one. See SHORT-LOOP.md.
+- **Slash command / prompt template**: a reusable instruction file, invoked as `/name`. Ours live in `workflow/templates/commands/` and `prompts/`; `tools/install-workflow.sh` links them into pi (`~/.pi/agent/prompts/`) and Claude Code (`~/.claude/commands/`).
+- **Short loop**: one task per session, with files (`PROGRESS.md` first) carrying the memory to the next one. See workflow/WORKFLOW.md.
 - **Done gate**: the command a task must pass before it counts as finished. Here: `make trace RUN=1 REQS="…"`.
 - **FSD**: Functional Specification Document. What the product must do, as testable requirements.
 - **FQBN**: Fully Qualified Board Name, arduino-cli's string for "board + all Tools menu settings".

@@ -13,10 +13,15 @@ Updated: [date and time]. Current state only, under ~60 lines. Finished work is 
 - [Issue, where it shows, how to reproduce | nothing known].
 
 ## Waiting on me
-- [Questions or decisions only I can make | nothing].
+- [Questions or decisions only I can make | "awaiting my check: M2, open the export in Excel, the columns line up" | nothing].
 
 ## Done
 - [M0 skeleton]: [one line]. Details in docs/history.md.
+
+## Time [IF competition]
+| Milestone | Budget | Start | End |
+|---|---|---|---|
+| [M0] | [40 min] | [Fri 19:30] | [20:05] |
 
 ## How to run
 ```

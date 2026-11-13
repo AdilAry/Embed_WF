@@ -8,8 +8,8 @@
 # Installs: arduino-cli + ESP32 core + libraries, the pi coding agent (pi.dev),
 # the short-loop workflow (/start, /wrap, /define, ...), the bench-*
 # commands, a Python venv for BLE.
-# Safe to run again. After `git pull` in ~/Embed_WF, tools/install-workflow.sh
-# alone refreshes the slash commands.
+# Safe to run again. The slash commands are links into ~/Embed_WF, so a
+# `git pull` there updates them; keep the kit in that place.
 set -euo pipefail
 
 if [[ $EUID -eq 0 ]]; then echo "Don't run this with sudo." >&2; exit 1; fi
@@ -58,10 +58,10 @@ fi
 command -v pi >/dev/null && pi --version || echo "open a new terminal, then run: pi --version"
 
 step "5/7 Short-loop workflow: slash commands + \"How I work\" file (every project)"
-# One source (prompts/, user-level/AGENTS.md), copied to each agent harness on
-# this machine. pi turns every .md file in its prompts folder into a slash
-# command: start.md -> /start. Copied, not linked, so after changing a file in
-# Embed_WF/prompts/ (or a `git pull`) run tools/install-workflow.sh again.
+# One source (workflow/ for /start /wrap /judge and the "How I work" file,
+# prompts/ for the embedded commands), linked into each agent harness on this
+# machine. pi turns every .md file in its prompts folder into a slash command:
+# start.md -> /start. Linked, so a `git pull` in ~/Embed_WF updates them.
 mkdir -p "${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"   # so the installer sets pi up even before its first run
 bash "$REPO/tools/install-workflow.sh"
 
@@ -80,9 +80,9 @@ chmod +x "$BIN/bench-ble-scan"
 ln -sfn "$REPO/tools/new_project.sh" "$BIN/new-embedded-project"
 cat >"$BIN/new-project" <<EOF
 #!/usr/bin/env bash
-exec "$REPO/tools/new_project.sh" --generic "\$@"
+exec bash "$REPO/workflow/new-project.sh" "\$@"
 EOF
-chmod +x "$BIN/new-project" "$REPO/tools/new_project.sh" "$REPO/tools/install-workflow.sh"
+chmod +x "$BIN/new-project" "$REPO/tools/new_project.sh"
 echo "  bench-wifi, bench-mqtt, bench-ble-scan, new-embedded-project, new-project"
 
 step "7/7 Checks"
