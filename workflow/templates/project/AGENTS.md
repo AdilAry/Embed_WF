@@ -1,6 +1,6 @@
 # AGENTS.md: [project name]
 
-Loaded in every session. Keep it under ~120 lines once filled in: only facts that hold for the whole project. Detail lives in docs/, behind "Read only when needed". A heading that carries an [IF ...] marker makes its whole section optional: delete the section if the condition doesn't hold.
+Loaded in every session. Keep it under ~120 lines once filled in: only facts that hold for the whole project. Detail lives in docs/, behind "Read only when needed". A heading that carries an IF marker makes its whole section optional: delete the section if the condition doesn't hold.
 
 ## Project
 - **What:** [one line].
@@ -24,7 +24,7 @@ Loaded in every session. Keep it under ~120 lines once filled in: only facts tha
 - **Run:** `[command that starts it, in a fresh terminal]`
 - **Check:** `[the command that says whether it works: tests, build, linter]`. Run it before calling anything done.
 - **Done gate:** the task's "Done when" in docs/plan.md passes. For a task that isn't in the plan: Check passes, and a named test covers the change.
-- **Run limit:** [10] failed runs of "done when" in one session. Then stop and report.
+- **Run limit:** [20] test or build runs in one session, passed or failed. Then stop and report.
 - **Push:** [in /wrap | only after I've checked the result].
 - **Hardware:** [none | board, notes file in docs/].
 - **Deploy:** [local only | where]. [IF deployed] Never deploy before I've checked the result.
@@ -38,7 +38,7 @@ Loaded in every session. Keep it under ~120 lines once filled in: only facts tha
 - **Team:** [me (solo) | names and roles].
 - **Budget:** [16] h of work. M0 skeleton 5% · M1 foundation 15% · M2 core feature 25% · first-question check · M3 [extra layer] 10% · M4 polish 20% · judge pass + fixes 25% · freeze. When a milestone reaches its budget, stop and tell me what's left and what you'd cut; I decide.
 - **After freeze:** bug fixes only; question any other change before doing it. For any change visible on screen, list the screenshots and clips that need retaking.
-- **At /start also:** log the start time in the Time table of PROGRESS.md (`Get-Date` on Windows, `date` on Linux).
+- **At /start also:** log the start time (`Get-Date` on Windows, `date` on Linux) in a "Time" table in PROGRESS.md. If the table isn't there yet, add it: Milestone, Budget, Start, End.
 - **At /wrap also:** log the end time in the Time table and put the time spent in the history entry. If a new AI tool or purpose was used this session, add a row to docs/ai_log.md.
 
 ## Data [IF the project uses data]

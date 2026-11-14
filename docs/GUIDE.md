@@ -367,7 +367,7 @@ Each of the steps above is its own session: end it with **`/wrap`**, then
    gate is green. It stops and asks when it needs your hands (wiring, a board
    that isn't plugged in), when it would have to leave the plan, when a decision
    isn't covered by the FSD, when the same failure has survived three different
-   fixes, or after ten flash-and-test runs without a pass (the Run limit). A bare
+   fixes, or after 25 test or build runs in the session (the Run limit). A bare
    board on USB is flashed without asking. If the FSD says the board drives
    something that can move, heat, switch mains or charge a battery, the plan says
    so and the agent flashes only after your OK for that session.

@@ -72,6 +72,13 @@ jobs:
               -e 'docs/GUIDE' ../workflow/templates ../workflow/install.sh ../workflow/new-project.sh; then
             echo "workflow/ must not depend on the embedded layer (see above)"; exit 1
           fi
+          # The "nothing left in brackets" check must be able to come back empty:
+          # the explanatory first lines may not contain a bracket themselves,
+          # and PROGRESS.md (agent-maintained) may not carry an IF section.
+          for f in ../workflow/templates/project/AGENTS.md ../workflow/templates/project/docs/plan.md; do
+            if sed -n 1,4p "$f" | tail -n +2 | grep -n '\['; then echo "$f: bracket in the instruction lines"; exit 1; fi
+          done
+          if grep -n '\[IF' ../workflow/templates/project/PROGRESS.md; then echo "PROGRESS.md must not have IF sections"; exit 1; fi
           bash -n ../workflow/install.sh && bash -n ../workflow/new-project.sh
           bash ../tools/build-workflow-zip.sh "$RUNNER_TEMP/short_loop_workflow.zip"
 

@@ -30,7 +30,8 @@ The project's AGENTS.md defines **Check**, **Done gate**, **Run limit** and **Pu
    Stop and report when:
    - you need to change something that isn't in the plan and isn't a small consequence of it;
    - the same failure has survived 3 different fixes;
-   - "done when" has failed as many times as the Run limit (10 if AGENTS.md gives none);
+   - you have made as many test or build runs as the Run limit, counting every run, passed or
+     failed (20 if AGENTS.md gives none);
    - something needs my hands, or the plan or spec is ambiguous, contradictory or wrong.
 8. When it passes, or you stopped: report in 5 lines or fewer (the result, the output line that
    proves it, what's left). Then tell me what to check and to type /wrap.

@@ -18,11 +18,6 @@ Updated: [date and time]. Current state only, under ~60 lines. Finished work is 
 ## Done
 - [M0 skeleton]: [one line]. Details in docs/history.md.
 
-## Time [IF competition]
-| Milestone | Budget | Start | End |
-|---|---|---|---|
-| [M0] | [40 min] | [Fri 19:30] | [20:05] |
-
 ## How to run
 ```
 [commands that work in a fresh terminal]

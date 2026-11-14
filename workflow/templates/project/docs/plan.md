@@ -1,6 +1,6 @@
 # Plan: [project name]
 
-Read only the section of the current task. One section is one session; if it turns out bigger, split it (M2a, M2b) instead of stretching the session. Every section says how it is proven ("Done when"), so /start can quote it and /wrap can run it. A section whose heading carries an [IF ...] marker is optional: delete it if the condition doesn't hold.
+Read only the section of the current task. One section is one session; if it turns out bigger, split it (M2a, M2b) instead of stretching the session. Every section says how it is proven ("Done when"), so /start can quote it and /wrap can run it. A section whose heading carries an IF marker is optional: delete it if the condition doesn't hold.
 
 ## M0 Skeleton
 - Repo structure, dependency file, `.env.example`, `.gitignore`, PROGRESS.md from its template, LICENSE ([MIT | the event's, client's or employer's terms | none, private repo]).

@@ -57,7 +57,7 @@ itself can't run.
 | I edited a command file in the kit and nothing changed | The commands are links, so the file is already current: `/reload` in a running pi, or start a new session. If you installed with `--copy`, run `bash ~/Embed_WF/tools/install-workflow.sh --copy` again. |
 | Linked commands are not offered | Install copies instead: `bash ~/Embed_WF/tools/install-workflow.sh --copy`. |
 | A session starts with more context than expected | A parent folder has its own `AGENTS.md` or `CLAUDE.md`: agents load those too. Projects belong in `~/projects/`, not inside `~/Embed_WF`. In Claude Code, `/context all` lists the files it loaded. |
-| The agent stopped at the Run limit | Ten flash-and-test runs without a pass means the item is too big or the cause is physical. `/wrap`, split the item in `docs/PLAN.md`, start fresh. |
+| The agent stopped at the Run limit | 25 test or build runs in one session (every `make` test or build target counts, passed or failed) means the item is too big or the cause is physical. `/wrap`, split the item in `docs/PLAN.md`, start fresh. |
 | "Waiting on me" keeps growing | Items there are not done until you look at the device and say so at the next `/start`. Check before starting more. |
 | The agent starts coding before I said OK | `/start` forbids that. Say "stop, show me the plan first". If it keeps happening, the task was given as plain text instead of through `/start`. |
 | A session got long and vague | That is context rot. `/wrap` (it records exactly where things stand), `/new`, `/start`. |

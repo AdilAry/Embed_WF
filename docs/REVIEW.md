@@ -1,7 +1,17 @@
 # Review history of the Embed_WF kit
 
-Five passes so far. The newest is first. None of them has touched your real
+Six passes so far. The newest is first. None of them has touched your real
 boards or the T480s, so the last section is the list that matters most.
+
+## Pass 6 (November 2026): five points on the standalone workflow
+
+| # | Point | Verdict | What was done |
+|---|---|---|---|
+| 1 | The bracket check could never come back empty: the lines explaining the IF marker contained one | Agree; my bug | Both lines reworded. CI now fails if the instruction lines of the starter contain a bracket. |
+| 2 | Two copies of `/start`, `/wrap`, `/judge` (kit and standalone) | Premise out of date, conclusion right | Since pass 5 the kit has only the embedded commands and installs the generic ones from `workflow/`. What remains is `workflow/` here versus an unzipped copy elsewhere. Making the workflow its own repository, and dropping `workflow/` from this kit, is the fix; it waits on the owner creating that repository. |
+| 3 | The Run limit only counted failed runs of "done when" | Agree on the loophole, not on the fix | Counting every *failed* run would stop healthy test-first sessions, where each step starts with a run that is meant to fail. The limit now counts every test or build run, passed or failed: 20 in the generic starter, 25 here (host tests are run often). The earlier exemption for `make host-test` was the same loophole and is gone. Both numbers are starting points to tune. |
+| 4 | `PROGRESS.md` carried an optional Time section the bracket check doesn't cover | Agree, simpler fix | The table is no longer in the template. The Competition section creates it the first time it logs a start time, so a normal project has nothing to delete. |
+| 5 | `efficient-ai-tools.md` called pi "shelved for later" | Agree | Reworded to "second agent"; the section is now "Pi", with local models marked as later. |
 
 ## Pass 5 (November 2026): workflow v3, and an outside review
 

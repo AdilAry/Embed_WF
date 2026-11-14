@@ -11,7 +11,7 @@ Loaded in every session, by whichever agent runs here (pi reads this file; Claud
 - Arduino (arduino-esp32 core 3.x) built with arduino-cli. Use the make targets below; never improvise long arduino-cli lines.
 - **Check:** `make check` (host tests + firmware compile).
 - **Done gate:** `make trace RUN=1 REQS="<the task's REQ IDs>"` prints `TRACE:OK`. That means: each of those requirements names a test, the test exists, and it passed **on the current code**.
-- **Run limit:** 10 runs of `make loop`, `make target-test` or `make bench-test` in one session without the task's tests passing. Then stop and report. `make host-test` doesn't count: it is cheap, run it often.
+- **Run limit:** 25 test or build runs in one session, passed or failed: every `make host-test`, `compile`, `loop`, `target-test` or `bench-test` counts as one. Then stop and report.
 - **Push:** in /wrap. GitHub CI compiles every push; nothing is deployed. Pushing is not finishing: an item awaiting the owner's check is pushed unticked.
 
 ```

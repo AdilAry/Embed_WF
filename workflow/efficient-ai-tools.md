@@ -1,6 +1,6 @@
 # Efficient AI Use: Tools and Setup
 
-The tools from our conversation that keep context small and usage low. Main setup: **Claude Code on Claude Pro**, with **Pi** shelved for later (OpenAI and local models only).
+The tools from our conversation that keep context small and usage low. Main setup: **Claude Code on Claude Pro**, and **Pi** as the second agent (OpenAI login or an API key; local models later). Both work from the same project files; see WORKFLOW.md §6.
 
 As of November 2026. Commands and versions change; check each tool's docs before relying on a detail.
 
@@ -83,12 +83,12 @@ Makes the agent interview you about your plan before it builds anything. Cheap i
 
 ---
 
-## 5. Later: Pi
+## 5. Pi
 
 | Tool | What it does | Setup |
 |---|---|---|
 | Pi | Minimal agent harness: four tools, small system prompt, any model provider | Windows: `powershell -c "irm https://pi.dev/install.ps1 \| iex"`; Linux: `curl -fsSL https://pi.dev/install.sh \| sh`. Then `/login` with OpenAI. |
-| Local models | Small models on the GTX 1650 (roughly 3–8B, quantized) for offline questions | Run through an OpenAI-compatible local server and point Pi at it. Not strong enough for agent loops. |
+| Local models (later) | Small models on the GTX 1650 (roughly 3–8B, quantized) for offline questions | Run through an OpenAI-compatible local server and point Pi at it. Not strong enough for agent loops. |
 
 Pi does **not** run on Claude subscriptions (Pro, Max or Team). Keep Claude in Claude Code. Pi has no permission system, so run it in a container or a separate user account.
 

@@ -118,7 +118,7 @@ If the last session left something "awaiting my check", `/start` asks about that
 **After my OK** the agent works the plan and may loop on its own (run, read the failure, fix) until "done when" passes. It stops and reports if:
 - it needs to leave the plan;
 - the same failure survives 3 different fixes;
-- "done when" has failed as many times as the project's Run limit (10 by default);
+- it has made as many test or build runs as the project's Run limit (20 by default), counting every run, passed or failed;
 - something needs my hands, or the plan is ambiguous or wrong.
 
 Then it tells me what to check and to type `/wrap`.
@@ -174,7 +174,7 @@ Because the memory is in the files, you can switch agent between two sessions of
 | The agent works from stale information | PROGRESS.md contradicts itself: rewrite "Now" and "Next", delete resolved items. |
 | Auto-compact fired | Finish the current step, `/wrap`, start fresh. |
 | A task doesn't fit in one session | Split it in plan.md (M2a, M2b). |
-| The agent hits the Run limit | The task is too big or its "Done when" too far away. Split it, or wrap and restart with what the failures showed. |
+| The agent hits the Run limit | The task is too big or its "Done when" too far away. Split it, or wrap and restart with what the runs showed. If healthy sessions hit it, raise the number in AGENTS.md. |
 | The plan at Gate 1 keeps being wrong | The plan section is too vague. Put the edge cases and the "Done when" there, not in chat. |
 | The same mistake keeps coming back | Add one line to AGENTS.md (or the user-level file if it happens in every project). Remove rules again once models stop needing them. |
 | The agent keeps asking what to do next | "Next" in PROGRESS.md isn't concrete enough to start from. |
@@ -219,10 +219,10 @@ Because the memory is in the files, you can switch agent between two sessions of
 | ship / learn modes | Gone | Learn mode left core logic as `TODO(human)`, so "done when" could never pass and the loop had no end. Teaching is now a per-task request (§8). |
 | `CLAUDE.md` was the instruction file; commands in each project's `.claude/commands/` | `AGENTS.md` plus a one-line `CLAUDE.md`; commands installed once per machine | pi would have read the project's CLAUDE.md, but not the user-level file or the commands. AGENTS.md is also the one name every agent reads. One installed copy of the commands means an update is one `git pull`, not an edit in every repo. |
 | One template shaped by a hackathon; other projects edited hackathon fields out line by line | The same single template, with `Problem`, `Competition` and `Data` as whole optional sections | A plain project deletes three sections instead of hunting for fields. The competition section carries its own start and wrap steps, so time tracking and the AI log travel with it. |
-| The loop could run until the context was full | Run limit: 10 failed runs of "done when", set per project | A task that keeps nearly passing now has a countable end. |
+| The loop could run until the context was full | Run limit: 20 test or build runs per session, passed or failed, set per project | A session now has a countable end. Every run counts, not only failures of "done when": otherwise the agent could loop on other commands forever, and a first run that is meant to fail would be hard to tell from one that isn't. |
 | `/wrap` marked a task done when its command passed | A task with a check only I can do stays "awaiting my check" until I confirm it | The command passing is the agent's evidence. Finished is my call. |
 | "Done when" assumed a command | No-code tasks name a file, what it must say, and my approval | Otherwise the agent invents a check to satisfy the rule. |
-| Time logged in every project | Only in the `Competition` section | Nothing used it outside a budgeted event. |
+| Time logged in every project, with a Time table in every PROGRESS.md | Only with the `Competition` section, which creates the table when it first logs a time | Nothing used it outside a budgeted event, and a file the agent maintains should have nothing for me to delete. |
 | history.md entries carried "time spent" | Only with the `Competition` section | Same reason. |
 
 Not changed on purpose: the split of files by read frequency, the five rules, the snapshot PROGRESS.md, the two gates, the fresh-session review, the bracket markers.
