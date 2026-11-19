@@ -33,7 +33,7 @@ Arduino IDE still works here for quick manual experiments.
 | OS | Linux Mint |
 | Ports used | USB-A/USB-C → ESP32 boards · Ethernet → router · Intel Wi-Fi → test hotspot · Bluetooth → BLE tests |
 
-**Role:** runs the pi agent, arduino-cli and the tests as the unprivileged user
+**Role:** runs the agent (Claude Code), arduino-cli and the tests as the unprivileged user
 `embdev`. Plays the part of video 3's Raspberry Pi bench: it flashes the boards,
 reads their serial output, provides a disposable Wi-Fi network (`bench-wifi`),
 an MQTT broker (`bench-mqtt`), and BLE scanning (`bench-ble-scan`).
@@ -41,7 +41,7 @@ an MQTT broker (`bench-mqtt`), and BLE scanning (`bench-ble-scan`).
 **Constraints to remember**
 
 - Internet must come over **Ethernet** while the Wi-Fi card is the test hotspot.
-- 8 GB RAM is fine for one or two parallel pi sessions with arduino-cli.
+- 8 GB RAM is fine for one or two parallel agent sessions with arduino-cli.
   ESP-IDF builds are heavier; close other apps or build in CI.
 - Single-channel RAM costs some speed, which hardly matters here. As far as I
   know the T480s has memory soldered to the board plus **one** SODIMM slot.

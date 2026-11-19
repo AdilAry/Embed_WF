@@ -5,7 +5,7 @@
 #
 # Copies template/, refreshes the board reference from hardware/boards/, sets
 # the project name, and makes the first git commit. Then:
-#   cd ~/projects/<name> && pi          and type  /define
+#   cd ~/projects/<name> && claude      and type  /define
 #
 # For any other kind of software project, use the short-loop workflow's own
 # generator instead:  bash "$WORKFLOW_DIR/new-project.sh" <name>
@@ -33,8 +33,9 @@ if ! git config user.name >/dev/null || ! git config user.email >/dev/null; then
   exit 1
 fi
 
-# Agents also load instruction files from every PARENT folder of a project (pi
-# walks up to the filesystem root, Claude Code does the same for CLAUDE.md). A
+# Agents also load instruction files from every PARENT folder of a project
+# (Claude Code walks up to the filesystem root for CLAUDE.md; pi, for later,
+# does the same for AGENTS.md). A
 # project created inside this kit, or inside another project, would silently
 # get that folder's AGENTS.md as well. Refuse unless told otherwise.
 mkdir -p "$PARENT"
@@ -77,4 +78,4 @@ echo
 echo "Next:"
 echo "  cd $DEST"
 echo "  \$EDITOR docs/IDEA.md      # write your idea in plain words"
-echo "  pi                         # then type: /define"
+echo "  claude                     # then type: /define"

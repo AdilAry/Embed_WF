@@ -60,7 +60,7 @@ testable and names the fastest test tier that can prove it**.
    owner checks before an item counts as finished.
 
 8. Fill the **What** line in `AGENTS.md` (one line) and replace `[project name]` in its title.
-   Then tell the owner to type `/wrap`: it rewrites `PROGRESS.md` (next step: `/commission`
-   with a board plugged into the dev box, then `/start` on the first plan item) and commits.
+   Then tell the owner to type `/wrap`. "Next" in `PROGRESS.md` must then read: `/commission`
+   with a board plugged into the dev box, then `/start` on the first plan item.
 
 Never write firmware in this command.

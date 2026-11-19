@@ -23,6 +23,6 @@ Project name requested: `$ARGUMENTS`
 5. Tell the owner the next steps, exactly:
    - `cd ~/projects/<name>`
    - write the idea in `docs/IDEA.md` (plain words, 5–15 sentences)
-   - start `pi` in that folder and run `/define`
+   - start `claude` in that folder and run `/define`
 
 Do not start writing the FSD or any code in this command.

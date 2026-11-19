@@ -48,24 +48,23 @@ itself can't run.
 | SSH from Windows times out | Is the T480s asleep? Set the lid action to "Do nothing" and disable suspend on AC. Check the IP in the router. |
 | Agent stopped when I closed my laptop | Run it inside `tmux` (see GUIDE §B5). |
 
-## pi (the agent)
+## Claude Code (the agent)
 
 | Symptom | Fix |
 |---|---|
-| `pi: command not found` | Open a new terminal (PATH). Otherwise re-run `bash ~/Embed_WF/devbox/setup-user.sh`. |
-| Commands like `/start` don't appear | `ls ~/.pi/agent/prompts` should list `start.md`, `wrap.md`, `define.md` and the others. If not, run `bash ~/Embed_WF/tools/install-workflow.sh`. In a running pi, `/reload` picks them up. |
-| I edited a command file in the kit and nothing changed | The commands are links, so the file is already current: `/reload` in a running pi, or start a new session. If you installed with `--copy`, run `bash ~/Embed_WF/tools/install-workflow.sh --copy` again. |
+| `claude: command not found` | Open a new terminal (PATH). Otherwise re-run `bash ~/Embed_WF/devbox/setup-user.sh`. |
+| Commands like `/start` don't appear | `ls ~/.claude/commands` should list `start.md`, `wrap.md`, `define.md` and the others. If not, run `bash ~/Embed_WF/tools/install-workflow.sh`, then start a new session. |
+| I edited a command file in the kit and nothing changed | The commands are links, so the file is already current: start a new session. If you installed with `--copy`, run `bash ~/Embed_WF/tools/install-workflow.sh --copy` again. |
 | Linked commands are not offered | Install copies instead: `bash ~/Embed_WF/tools/install-workflow.sh --copy`. |
-| `install-workflow.sh` or `setup-user.sh` says the short-loop workflow was not found | `echo $WORKFLOW_DIR` must print the workflow folder. If it is empty, run the workflow's own `install.sh` once (it saves `WORKFLOW_DIR` in `~/.bashrc`) and open a new terminal. That installer needs an agent on the machine first; `setup-user.sh` installs one before it stops. |
+| `install-workflow.sh` or `setup-user.sh` says the short-loop workflow was not found | `echo $WORKFLOW_DIR` must print the workflow folder. If it is empty, run the workflow's own `install.sh` once (it saves `WORKFLOW_DIR` in `~/.bashrc`) and open a new terminal. |
 | A session starts with more context than expected | A parent folder has its own `AGENTS.md` or `CLAUDE.md`: agents load those too. Projects belong in `~/projects/`, not inside `~/Embed_WF`. In Claude Code, `/context all` lists the files it loaded. |
 | The agent stopped at the Run limit | 25 test or build runs in one session (every `make` test or build target counts, passed or failed) means the item is too big or the cause is physical. `/wrap`, split the item in `docs/PLAN.md`, start fresh. |
-| "Waiting on me" keeps growing | Items there are not done until you look at the device and say so at the next `/start`. Check before starting more. |
-| The agent starts coding before I said OK | `/start` forbids that. Say "stop, show me the plan first". If it keeps happening, the task was given as plain text instead of through `/start`. |
-| A session got long and vague | That is context rot. `/wrap` (it records exactly where things stand), `/new`, `/start`. |
-| `PROGRESS.md` keeps growing or contradicts itself | It is a snapshot, not a log. Ask for "rewrite Now and Next from scratch, move finished work to docs/history.md", or do it by hand. |
-| "No model" / asks to log in | `/login`, choose your provider, then `/model`. |
-| Out of quota or credit | Wait for the quota window, or top up. See GUIDE §7 for ways to use less. |
-| The agent ran something I didn't expect | That is how pi works: it never asks first. `Esc` stops it. This is why it runs as `embdev` on the spare machine (GUIDE §6). |
+| Every `make` asks for my approval | The project has no `.claude/settings.json` (copy it from `~/Embed_WF/template/.claude/` into an older project), or Claude Code was started outside the project folder. |
+| Session problems: long or vague sessions, PROGRESS.md growing or contradicting itself, "Waiting on me" piling up | The workflow's WORKFLOW.md §7 has the fixes. |
+| The agent starts coding before I said OK | Say "stop, show me the plan first". If it keeps happening, the task was given as plain text instead of through `/start`. |
+| Asks to log in | Run `claude` and follow the link to log in with your Claude plan. |
+| Out of usage | Wait for your plan's usage window to reset. See GUIDE §7 for ways to use less. |
+| The agent ran something I didn't expect | The allowlist lets `make`, the tools and git run without asking, and `make` runs whatever the Makefile says. `Esc` stops it. This is why it runs as `embdev` on the spare machine (GUIDE §6). |
 | The agent goes in circles on a bug | Stop it (`Esc`). Ask it to summarise what it tried and its hypothesis. Often the FSD is ambiguous, or the problem is physical (cable, wrong board). |
 | `new-embedded-project` says git doesn't know who you are | Run the two `git config --global user.…` commands it prints, then try again. |
 | `gh repo create` is refused | The dev box's GitHub token is deliberately narrow. Create the empty repo on github.com, add it to the token's repository list, then push (GUIDE §B3). |

@@ -12,17 +12,17 @@ tmux new -s work        # or: tmux attach -t work
 
 VS Code: `F1` → *Remote-SSH: Connect to Host* → open `~/projects/<name>`.
 
-## The short loop (every session, any project)
+## The short loop (every session, any project; the workflow's WORKFLOW.md §4)
 
 | Step | Type | Your part |
 |---|---|---|
 | Begin one task | `/start` (takes "Next" from PROGRESS.md), or `/start REQ-010`, `/start fix the export` | read the 5-bullet plan and its **done when**; correct it or say OK |
-| Work | nothing: the agent loops on its own until "done when" passes, or it hits a stop (left the plan, 3 failed fixes, Run limit, needs your hands) | answer when it stops and asks |
+| Work | nothing: the agent loops on its own until "done when" passes, or stops to ask you | answer when it stops and asks |
 | End | `/wrap` | check what it tells you to check; a task with a check only you can do stays "awaiting my check" until you confirm it at the next `/start` |
-| Next task | `/new`, then `/start` | |
+| Next task | `/clear`, then `/start` | |
 | Fresh-eyes review | `/judge` in a **new** session (`/judge final` at the end) | pick which issues get fixed |
 
-Around 40% context: finish the step and `/wrap`. Wrong path: go back (`/tree`) instead of correcting.
+Around 40% context: finish the step and `/wrap`. Wrong path: go back (`Esc Esc`, rewind) instead of correcting.
 
 ## Project lifecycle (embedded)
 
@@ -35,7 +35,7 @@ Around 40% context: finish the step and `/wrap`. Wrong path: go back (`/tree`) i
 | Add a part | put the PDF in `datasheets/`, then `/datasheet <file>.pdf` |
 | Change something | `/change-request <what>`, `/wrap`, then `/start` on the new item |
 | Any other software project | `new-project <name>` in the shell: the workflow's own generator (its WORKFLOW.md §3) |
-| Resume last session | `pi -c` (latest) or `pi -r` (pick one) |
+| Resume last session | `claude -c` (latest) or `claude -r` (pick one) |
 
 ## make targets (in a project)
 
@@ -90,7 +90,7 @@ bench-ble-scan [--name X] [-s 10]
 - "Break the wrap logic on purpose and show me the test catches it, then undo it."
 - "Update the docs, commit and push."
 
-## pi keys / commands
+## Claude Code keys / commands
 
-`Esc` stop the agent · `/new` new topic · `/resume` older session · `/session` tokens + cost ·
-`/compact` shrink context · `/model` (Ctrl+L) switch model · `/reload` re-read prompts · `/hotkeys` · `/quit`
+`Esc` stop the agent · `Esc Esc` rewind · `/clear` new task · `/resume` older session ·
+`/context` how full · `/compact` shrink context · `/model` switch model · `/btw` side question · `/exit`

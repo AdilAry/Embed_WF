@@ -1,6 +1,6 @@
 # AGENTS.md: [project name]
 
-Loaded in every session, by whichever agent runs here (pi reads this file; Claude Code reads it through `CLAUDE.md`). Keep it under ~120 lines: only facts that hold for the whole project. Detail lives in docs/, behind "Read only when needed".
+Loaded in every session. Claude Code reads it through `CLAUDE.md`; `.claude/settings.json` lets the make targets and git run without a prompt. Keep it under ~120 lines: only facts that hold for the whole project. Detail lives in docs/, behind "Read only when needed".
 
 ## Project
 - **What:** [one line, filled in by /define].

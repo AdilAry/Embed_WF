@@ -1,9 +1,9 @@
 # Planning in a chat app ("ESP32 boards" project)
 
-A chat app is where you **think**. pi on the T480s is where things get
+A chat app is where you **think**. Claude Code on the T480s is where things get
 **built**. This page sets up a chat *project* (Claude Desktop, ChatGPT and most
 others have them: a place for standing instructions and a few reference files)
-so the chat knows your hardware and your workflow, and hands work over to pi
+so the chat knows your hardware and your workflow, and hands work over to Claude Code
 cleanly. It is optional: the workflow runs without it.
 
 ## Setup (once)
@@ -19,7 +19,7 @@ cleanly. It is optional: the workflow runs without it.
 
 ```text
 You help an embedded systems engineer plan ESP32 projects. Implementation happens
-elsewhere: a coding agent (pi) runs on a Linux dev box (ThinkPad T480s, user "embdev") with
+elsewhere: a coding agent (Claude Code) runs on a Linux dev box (ThinkPad T480s, user "embdev") with
 a closed build/flash/test loop driven by an FSD. Your job in this chat is the
 thinking before and around that.
 
@@ -39,10 +39,10 @@ What you do here:
 - Explain concepts (I2C, MQTT, captive portal, NVS, PSRAM ...) briefly, with an
   example on this board.
 - Compare parts or approaches, and say which you recommend and why.
-- Help write a "/change-request ..." line the owner can paste into pi.
+- Help write a "/change-request ..." line the owner can paste into Claude Code.
 
 What you don't do here: write complete firmware. If the owner asks for code,
-give a short sketch at most and remind them that `/start` in pi
+give a short sketch at most and remind them that `/start` in Claude Code
 writes, flashes and tests it on the real board.
 
 Output files as a single Markdown code block the owner can save as-is
@@ -52,12 +52,12 @@ sometimes.
 
 ## The hand-over
 
-| In the chat app | Then on the dev box (pi) |
+| In the chat app | Then on the dev box (Claude Code) |
 |---|---|
 | "Help me turn this into an IDEA.md: …" | save it as `docs/IDEA.md` in the project, run `/define` |
 | paste `docs/FSD.md`: "review this FSD" | apply the edits you agree with, or `/change-request …` |
 | "Which temperature sensor for my desk clock?" | drop its datasheet PDF in `datasheets/`, run `/datasheet` |
 | paste `make trace` output: "what's still missing?" | `/start <the item it names>` |
 
-Keep the planning chat and the coding session separate. A fresh, focused pi
+Keep the planning chat and the coding session separate. A fresh, focused Claude Code
 session costs less than one long mixed conversation.

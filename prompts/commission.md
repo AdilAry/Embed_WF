@@ -50,6 +50,6 @@ to do physically.
     `gh run watch` that the `firmware` workflow is green.
 
 Finish: tick the Phase 0 items in `docs/PLAN.md` that passed. Then tell the owner the result in
-5 lines or fewer and to type `/wrap`, which writes the commissioning entry (binary size, the
-`make info` line of each board, anything learned) to `docs/history.md` and sets the next step
-in `PROGRESS.md`: `/start` on the first item of Phase 1.
+5 lines or fewer and to type `/wrap`. Its entry in `docs/history.md` records the binary size,
+the `make info` line of each board and anything learned; item 1 under "Next" in `PROGRESS.md`
+is `/start` on the first item of Phase 1.

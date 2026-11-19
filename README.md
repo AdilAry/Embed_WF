@@ -1,12 +1,12 @@
 # Embed_WF — an AI-assisted ESP32 workflow on hobby hardware
 
-You write specifications and tests. An AI agent (**pi**, or Claude Code) writes the
+You write specifications and tests. An AI agent (**Claude Code**) writes the
 firmware, builds it, flashes the board, reads the serial output, runs the tests
 and fixes its own mistakes, until the tests pass: one plan item per short
 session, with you approving the plan before and checking the result after.
 Nothing counts as finished until you have checked it.
 
-Built for: the pi coding agent with the model provider of your choice, a Windows
+Built for: Claude Code on a Claude plan (pi later, for self-hosted models), a Windows
 laptop to supervise from, an old Linux Mint laptop as the agent's sandbox and
 test bench, and Guition JC4827W543 (ESP32-S3, 4.3" touch) boards in both the
 resistive and capacitive variants.
@@ -45,20 +45,18 @@ shows a later date, check what changed there before relying on this kit.
 sudo bash devbox/setup-root.sh embdev         # once, from your admin account
 ```
 
-```bash
-bash ~/Embed_WF/devbox/setup-user.sh          # as embdev
-```
-
-The first run installs the toolchain and the agent, then stops at step 5:
-the workflow's installer needs an agent on the machine. Clone the short-loop
-workflow repository, run its `install.sh` once, open a new terminal (that sets
-`WORKFLOW_DIR`) and run `setup-user.sh` again.
+As embdev: clone the short-loop workflow repository, run its `install.sh`
+once, and open a new terminal (that sets `WORKFLOW_DIR`). Then:
 
 ```bash
-new-embedded-project hello-board && cd ~/projects/hello-board && pi
+bash ~/Embed_WF/devbox/setup-user.sh          # once, as embdev
 ```
 
-Then type `/commission` in pi, `/wrap` when it finishes, and from then on
+```bash
+new-embedded-project hello-board && cd ~/projects/hello-board && claude
+```
+
+Then type `/commission` in Claude Code, `/wrap` when it finishes, and from then on
 `/start` … `/wrap` for one plan item at a time.
 
 ## Status
@@ -72,7 +70,7 @@ Then type `/commission` in pi, `/wrap` when it finishes, and from then on
 | On-board run, R board (XPT2046) | display/touch code taken from your proven sketch; first full run happens at your first `/commission` |
 | On-board run, C board (GT911) | **unverified**, so it gets checked and fixed during your first `/commission` |
 | Bench scripts (hotspot / MQTT / BLE) | written for Mint + NetworkManager; not yet run on your T480s |
-| pi install + slash commands | written from pi's documentation; the installer and both project generators were run in a throwaway home, not yet on your T480s |
+| Claude Code install + allowlist + slash commands | installer and project generator run in a throwaway home; the allowlist (`template/.claude/settings.json`) is valid JSON but has not yet carried a real `/start` … `/wrap` loop. Not yet on your T480s |
 | Short-loop workflow | external (`WORKFLOW_DIR`), relied on only through its §8 contract of 19 Nov 2026. `tools/install-workflow.sh` was run against it in a throwaway home; no agent has yet run `/start` … `/wrap` on an embedded project |
 
 Inspired by the "10 levels" / embedded AI harness approach described in the
