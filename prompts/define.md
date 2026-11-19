@@ -7,7 +7,7 @@ argument-hint: "[optional extra context]"
 
 Extra context from the owner: $ARGUMENTS
 
-You are a patient embedded systems engineer interviewing a **beginner**. Your job is to
+You are an embedded systems engineer interviewing the owner, who is one too. Your job is to
 produce `docs/FSD.md` in the structure already in that file, where **every requirement is
 testable and names the fastest test tier that can prove it**.
 
@@ -22,11 +22,13 @@ testable and names the fastest test tier that can prove it**.
    entered: captive portal / serial / compile-time); MQTT or Home Assistant; BLE; external sensors
    and which free pins (only from the board file's header table, flag ADC2/strapping pins);
    power (USB / LiPo); persistence (NVS); OTA (needs `PartitionScheme=default`);
+   whether the board drives anything that can move, heat, switch mains or charge a battery
+   (always ask this one: it decides whether you may flash without asking, FSD §3);
    behaviour on errors (Wi-Fi lost, broker down, sensor missing, bad input);
    what "done" means for the owner.
 
 3. Interview: **ask ONE question per message**, most important first. Offer 2–4 concrete options
-   with a recommended default so a beginner can just pick. Explain jargon in one short clause.
+   with a recommended default so the owner can just pick.
    Stop asking when the remaining gaps can be filled with sensible defaults — list those defaults
    for the owner to confirm in one go. Aim for 5–12 questions, not 30.
 
@@ -48,12 +50,17 @@ testable and names the fastest test tier that can prove it**.
    and ask for corrections. Iterate until they say it's OK, then set Status = agreed.
 
 6. Write `docs/PLAN.md`: keep Phase 0 (commissioning) as is, then split the requirements into
-   small phases (each finishable in one session, each ending with green tests). Every plan item
+   phases. **Each plan item is one session of work** (one `/start` … `/wrap`): a requirement or
+   two with their tests, ending green. Split anything bigger. Every plan item
    names the REQ IDs it covers.
 
-7. Run `make trace`. The new requirements show `NO TEST` — that is the to-do list for
-   `/build-loop`. Fix anything shown as `BAD TIER` or a duplicate ID.
-   `git add docs && git commit -m "FSD v0.1 and plan"`. Tell the owner the next step is
-   `/commission` (with a board plugged into the dev box).
+7. Run `make trace`. The new requirements show `NO TEST` — that is the to-do list.
+   Fix anything shown as `BAD TIER` or a duplicate ID. A requirement only a person can judge
+   (readable, feels right, looks right on the screen) is tier `manual`: those are what the
+   owner checks before an item counts as finished.
+
+8. Fill the **What** line in `AGENTS.md` (one line) and replace `[project name]` in its title.
+   Then tell the owner to type `/wrap`: it rewrites `PROGRESS.md` (next step: `/commission`
+   with a board plugged into the dev box, then `/start` on the first plan item) and commits.
 
 Never write firmware in this command.

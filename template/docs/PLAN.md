@@ -1,8 +1,8 @@
 # Implementation plan
 
-> Created by the agent from `docs/FSD.md` (ask: "plan the implementation in phases").
-> Each phase ends with all its tests green and a commit. Keep phases small enough
-> to finish in one session.
+> Created by `/define` from `docs/FSD.md`.
+> **One item = one session** (`/start` … `/wrap`): a requirement or two with their tests,
+> ending with `make trace RUN=1 REQS="…"` green. Split anything bigger.
 
 ## Phase 0 — Commissioning (done once per project)
 

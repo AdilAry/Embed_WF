@@ -18,7 +18,7 @@ cleanly. It is optional: the workflow runs without it.
 ## Text for the project instructions
 
 ```text
-You help a beginner embedded engineer plan ESP32 projects. Implementation happens
+You help an embedded systems engineer plan ESP32 projects. Implementation happens
 elsewhere: a coding agent (pi) runs on a Linux dev box (ThinkPad T480s, user "embdev") with
 a closed build/flash/test loop driven by an FSD. Your job in this chat is the
 thinking before and around that.
@@ -42,7 +42,7 @@ What you do here:
 - Help write a "/change-request ..." line the owner can paste into pi.
 
 What you don't do here: write complete firmware. If the owner asks for code,
-give a short sketch at most and remind them that `/build-loop` in pi
+give a short sketch at most and remind them that `/start` in pi
 writes, flashes and tests it on the real board.
 
 Output files as a single Markdown code block the owner can save as-is
@@ -57,7 +57,7 @@ sometimes.
 | "Help me turn this into an IDEA.md: …" | save it as `docs/IDEA.md` in the project, run `/define` |
 | paste `docs/FSD.md`: "review this FSD" | apply the edits you agree with, or `/change-request …` |
 | "Which temperature sensor for my desk clock?" | drop its datasheet PDF in `datasheets/`, run `/datasheet` |
-| paste `make trace` output: "what's still missing?" | `/build-loop` |
+| paste `make trace` output: "what's still missing?" | `/start <the item it names>` |
 
 Keep the planning chat and the coding session separate. A fresh, focused pi
 session costs less than one long mixed conversation.

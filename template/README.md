@@ -22,7 +22,8 @@ Serial console at 115200 baud, type `help`. Or non-interactively:
 ## Project layout
 
 ```
-docs/        IDEA (your words) -> FSD (spec) -> PLAN (phases) -> NOTES (findings)
+PROGRESS.md  where the project stands right now (the agent rewrites it at every /wrap)
+docs/        IDEA (your words) -> FSD (spec) -> PLAN (items); history, decisions
 datasheets/  PDFs + extracted text + summaries for the agent
 firmware/    Arduino sketch: src/logic (pure C++), src/hal (drivers), src/app
 test/host/   tier 1 tests, run on the PC with g++

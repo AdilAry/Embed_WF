@@ -1,7 +1,75 @@
 # Review history of the Embed_WF kit
 
-Three passes so far. The newest is first. None of them has touched your real
+Seven passes so far. The newest is first. None of them has touched your real
 boards or the T480s, so the last section is the list that matters most.
+
+## Pass 7 (November 2026): the workflow becomes an external dependency
+
+The short-loop workflow now lives in its own repository. This kit no longer
+carries a copy of it: it finds the workflow through `WORKFLOW_DIR` (set by the
+workflow's installer) and relies only on its WORKFLOW.md §8 contract, dated
+19 November 2026. Session 1 of 3; sessions 2 (Claude Code as the agent, pi for
+later) and 3 (Debian on the dev box, if chosen) follow.
+
+| # | Change | Why |
+|---|---|---|
+| 1 | `workflow/`, `tools/build-workflow-zip.sh` and the CI steps that checked them are gone | The copy had already fallen behind the workflow (the stop rule for changed tests, ticking only plans with checkboxes). The checks on this kit's own files stay. |
+| 2 | `tools/install-workflow.sh` and `devbox/setup-user.sh` stop with a clear message if `WORKFLOW_DIR` isn't set; they never guess a path. `new-project` on the dev box is a link to the workflow's own generator | One variable, set in one place. `new_project.sh --generic` is gone: it only forwarded to that generator. |
+| 3 | `template/AGENTS.md` no longer restates the loop or its stop rules. It keeps only embedded facts: one plan item per task, the test-tier order, `STALE`, physical actions, spec changes via `/change-request`, the flashing rule | The restated copy had already missed the rule against editing a test to get green. "Never weaken a test" in Rules went for the same reason: `/start` has it. |
+| 4 | Repo `AGENTS.md`, README, GUIDE, cheatsheet, troubleshooting point to the external workflow | The README names the contract date. |
+
+Needs a change in the workflow repository (listed for the owner, not made here):
+its `install.sh` exits before saving `WORKFLOW_DIR` when no agent is installed
+yet, so a fresh dev-box account has to run `setup-user.sh` twice.
+
+## Pass 6 (November 2026): five points on the standalone workflow
+
+| # | Point | Verdict | What was done |
+|---|---|---|---|
+| 1 | The bracket check could never come back empty: the lines explaining the IF marker contained one | Agree; my bug | Both lines reworded. CI now fails if the instruction lines of the starter contain a bracket. |
+| 2 | Two copies of `/start`, `/wrap`, `/judge` (kit and standalone) | Premise out of date, conclusion right | Since pass 5 the kit has only the embedded commands and installs the generic ones from `workflow/`. What remains is `workflow/` here versus an unzipped copy elsewhere. Making the workflow its own repository, and dropping `workflow/` from this kit, is the fix; it waits on the owner creating that repository. |
+| 3 | The Run limit only counted failed runs of "done when" | Agree on the loophole, not on the fix | Counting every *failed* run would stop healthy test-first sessions, where each step starts with a run that is meant to fail. The limit now counts every test or build run, passed or failed: 20 in the generic starter, 25 here (host tests are run often). The earlier exemption for `make host-test` was the same loophole and is gone. Both numbers are starting points to tune. |
+| 4 | `PROGRESS.md` carried an optional Time section the bracket check doesn't cover | Agree, simpler fix | The table is no longer in the template. The Competition section creates it the first time it logs a start time, so a normal project has nothing to delete. |
+| 5 | `efficient-ai-tools.md` called pi "shelved for later" | Agree | Reworded to "second agent"; the section is now "Pi", with local models marked as later. |
+
+## Pass 5 (November 2026): workflow v3, and an outside review
+
+Your revised template (modes removed, "done when", the run limit, owner checks)
+and eleven review points from an outside chat were merged. The generic workflow
+now lives in one folder, `workflow/`, which is also shipped as a standalone zip;
+the embedded layer builds on it.
+
+| # | Review point | Verdict | What was done |
+|---|---|---|---|
+| 1 | Learn mode can't coexist with a loop that runs until "done when" passes | Agree | Modes removed everywhere. Teaching is a per-task request with its own "done when" (WORKFLOW §8). |
+| 2 | No limit on context: add a stop after 10 runs without a pass | Agree, with one change | **Run limit** in each project's AGENTS.md, default 10. In embedded projects it counts flash-and-test runs, not `make host-test`, which is cheap and should run often. A count is only a proxy: one huge log costs more than ten quiet runs, so "look, don't dump" stays. |
+| 3 | The competition profile lost its time tracking | Agree; the cause was mine | Splitting the competition parts into a paste-in profile separated the rule from the commands that did the work. Profiles are gone: one template again, with `Competition` as a whole optional section that carries its own "At /start also" and "At /wrap also" steps. |
+| 4 | `/wrap` marks items done before you've checked them | Agree, extended | Items with a check only you can do stay "awaiting my check"; the next `/start` asks and records it. Not adopted: holding back the push. Pushing is not finishing, CI on the push is one of the checks, and nothing is deployed. |
+| 5 | Flashing without asking when the board drives something physical | Agree, per session not per upload | FSD §3 records whether the board drives anything that can move, heat, switch mains or charge a battery; `/define` always asks. If so, the plan says the session flashes and waits for your OK once. An OK per upload would end the loop. |
+| 6 | "Done when" for tasks with no code | Agree | A file, what it must say, and your approval. Never an invented check. |
+| 7 | Symlink the commands on Linux | Agree, with a fallback | Links are the default: pi's loader follows linked files (checked in its source). Claude Code's docs don't say, so `--copy` exists. The user-level file is still copied, never linked: it is yours to edit. Side effect to know: switching the kit to another branch changes the live commands. |
+| 8 | `history.md` still asks for time spent | Agree | Dropped; the `Competition` section adds it. |
+| 9 | pi does read `CLAUDE.md` | Agree; I had it wrong | Per folder pi loads one of `AGENTS.override.md`, `AGENTS.md`, `CLAUDE.md`, in that order. Wording fixed here and in the workflow guide. It weakens one of my earlier arguments for `AGENTS.md`, not the conclusion. |
+| 10 | pi loads parent folders' files too | Agree, as a check not a note | Both project generators refuse to create a project under a folder that has its own instruction file. |
+| 11 | The shim might make Claude Code load `AGENTS.md` twice | Disagree | Claude Code's docs say the import never causes a second read, and when both files exist only `CLAUDE.md` is read. From v2.1.277 `AGENTS.md` alone also works. The shim stays; `/context all` shows what was loaded. |
+
+## Pass 4 (November 2026): the short loop
+
+Your generic short-loop workflow (short sessions, files as memory, `/start` …
+`/wrap`, `/judge` in a fresh session) was reviewed and made the way every
+project in this kit is worked. The embedded workflow changed shape to fit it.
+
+| # | Finding | Why it matters | Change |
+|---|---|---|---|
+| 1 | The embedded kit ran long: `/build-loop` implemented a whole phase with no plan approval, the opposite of a short loop. | Long sessions cost more per step as context fills, and your only gates were physical actions and failures. | `/build-loop` and `/wrap-up` are gone. One plan item per session: `/start` proposes a plan and waits, the agent loops against the tests inside it, `/wrap` ends it. The closed test loop is still there, just bounded. |
+| 2 | The embedded kit had no current-state file. `docs/NOTES.md` was an append-only log the agent was pointed at every session. | That is the growing-file problem your workflow was written to fix. | `PROGRESS.md` (snapshot, rewritten every `/wrap`), `docs/history.md` (append-only, read on request) and `docs/decisions.md` replace `NOTES.md`. |
+| 3 | The short-loop workflow was set up for Claude Code only (`.claude/commands/` per project, `~/.claude/CLAUDE.md`). | pi does read a project's `CLAUDE.md`, but not the user-level file or the commands. | `AGENTS.md` is the instruction file, `CLAUDE.md` a one-line shim. One set of command files serves both agents; `tools/install-workflow.sh` installs it and the user-level file per machine. |
+| 4 | The project template was shaped by a hackathon data app; other project types had to delete most of it. | "Applies to most software work" by deletion is fragile, and the always-loaded file carried fields most projects don't have. | A small generic starter (`generic/`), with the competition and data parts as optional `profiles/`. The embedded template is the third profile. |
+| 5 | `/start` had no agreed stop condition, and `/wrap` rewrote several files every session. | The inner loop is where tokens go; it needs an objective end. Wrap overhead matters when sessions are short. | The plan must name **done when:** a command. `/wrap` only touches files with something new and lists the files changed. |
+| 6 | The guide said pi accepts a Claude Pro/Max subscription login. | Your notes say it doesn't run on the plan, and that is right in effect: Anthropic bills third-party harnesses separately. | GUIDE §B3 corrected; SHORT-LOOP §4 explains which agent for which billing. |
+| 7 | The kit called you a beginner. | Your own notes say embedded systems engineer. | Corrected in the instructions the agents read (`/define`, the kit's AGENTS.md, the planning-chat text). |
+
+Full argument for items 3–5: `workflow/WORKFLOW.md` §9. Item 4 was revised in pass 5.
 
 ## Pass 3 (November 2026): bugs reproduced and fixed, switch to pi
 
@@ -40,8 +108,8 @@ mapped from the three videos onto your two laptops and two boards.
 
 Nothing here has run on real hardware. In the order you will meet them:
 
-1. **pi and the prompt templates.** After `setup-user.sh`, start `pi` in a project
-   and type `/` : `/define`, `/commission` and the others should be offered. If
+1. **pi and the slash commands.** After `setup-user.sh`, start `pi` in a project
+   and type `/` : `/start`, `/wrap`, `/define` and the others should be offered. If
    not, see troubleshooting.
 2. **The serial tool against a real board.** Everything in the loop goes through
    it. `/commission` exercises it step by step; the first one may need fixes.
@@ -62,7 +130,7 @@ Nothing here has run on real hardware. In the order you will meet them:
 ## Not changed, on purpose
 
 - **No Wi-Fi/MQTT code in the template.** The first project that needs it writes
-  it through `/define` → `/build-loop`, with bench tests. The fixtures
+  it through `/define` → `/start`, with bench tests. The fixtures
   (`wifi_ap`, `mqtt_broker`, `device.wait_for`) are in place.
 - **No ESP-IDF switch yet.** Arduino + arduino-cli is the right level for now.
 - **The polkit rule is still broad** (all NetworkManager actions for `embdev`).

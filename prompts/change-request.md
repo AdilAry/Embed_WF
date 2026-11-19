@@ -1,5 +1,5 @@
 ---
-description: Handle a change or new feature for an existing project - update the FSD first (new/changed REQ IDs, version bump, change log), add plan items and tests, then implement with the build loop. Use when the owner wants to change behaviour, add a feature, or fix a spec-level problem.
+description: Handle a change or new feature for an existing project - update the FSD first (new/changed REQ IDs, version bump, change log), add plan items and tests, then hand over to /start in a fresh session. Use when the owner wants to change behaviour, add a feature, or fix a spec-level problem.
 argument-hint: <what should change>
 ---
 
@@ -15,5 +15,6 @@ Requested change: $ARGUMENTS
    REQ IDs). Never reuse a removed REQ ID.
 4. Add a new phase (or items) to `docs/PLAN.md` referencing the REQ IDs.
 5. `make trace`: the new/changed requirements show `NO TEST` or `NOT RUN`; nothing else should
-   change status. Commit `"FSD vX.Y: <summary>"`.
-6. Continue with the `/build-loop` procedure for the new items.
+   change status.
+6. Stop here. Tell the owner to type `/wrap` (it puts the first new plan item under "Next" in
+   `PROGRESS.md`); the implementation is a fresh session: `/start <that item>`.

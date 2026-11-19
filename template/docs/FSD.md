@@ -24,6 +24,9 @@ One paragraph: what problem this solves and for whom.
 - Board pins used (only from the free-pin table in the board file), peripherals,
   external parts, power source.
 - Which touch variant(s) must work.
+- **Does the board drive anything that can move, heat, switch mains or charge a
+  battery?** No / what it is, and its safe state. If yes, the agent asks before
+  it flashes, and those outputs stay off at boot and in `selftest`.
 
 ## 4. Requirements
 

@@ -121,7 +121,7 @@ Other things the T480s bench can do:
 
 `make trace` alone only reports. `STRICT=1` fails on NO TEST or FAIL (CI uses this
 for the template). `RUN=1 REQS="REQ-010 REQ-020"` also fails on NOT RUN, SKIPPED
-and STALE, which is what `/build-loop` uses before it ticks a plan item.
+and STALE. That is the **Done gate**: `/start` names it in the plan, and `/wrap` runs it before a plan item is ticked.
 
 ### How a result is tied to the code
 
@@ -163,8 +163,8 @@ Known limits, so you're not misled by green:
 ## Tier 4 — field and manual
 
 Some things only you can judge: brightness, readability, touch feel, a sensor
-in its real spot. List them in FSD §8 as a checklist. `/build-loop` reminds you
-of them at the end of a phase.
+in its real spot. List them in FSD §8 as a checklist. `/wrap` reminds you
+of the ones belonging to the item just finished.
 
 ## Regression for free
 

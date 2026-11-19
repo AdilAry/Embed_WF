@@ -16,3 +16,4 @@ firmware/src/secrets.h
 !.vscode/extensions.json
 .DS_Store
 Thumbs.db
+out/
