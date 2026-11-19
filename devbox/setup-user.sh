@@ -6,10 +6,14 @@
 #     bash ~/Embed_WF/devbox/setup-user.sh
 #
 # Installs: arduino-cli + ESP32 core + libraries, the pi coding agent (pi.dev),
-# the short-loop workflow (/start, /wrap, /define, ...), the bench-*
-# commands, a Python venv for BLE.
-# Safe to run again. The slash commands are links into ~/Embed_WF, so a
-# `git pull` there updates them; keep the kit in that place.
+# the slash commands (/start, /wrap, /define, ...), the bench-* commands, a
+# Python venv for BLE.
+#
+# Needs the short-loop workflow, which is a separate repository: clone it and
+# run its install.sh once, which sets WORKFLOW_DIR. Step 5 stops and says so if
+# that hasn't happened yet; then run this script again.
+# Safe to run again. The slash commands are links into ~/Embed_WF and into the
+# workflow folder, so a `git pull` in either updates them; keep both in place.
 set -euo pipefail
 
 if [[ $EUID -eq 0 ]]; then echo "Don't run this with sudo." >&2; exit 1; fi
@@ -58,10 +62,16 @@ fi
 command -v pi >/dev/null && pi --version || echo "open a new terminal, then run: pi --version"
 
 step "5/7 Short-loop workflow: slash commands + \"How I work\" file (every project)"
-# One source (workflow/ for /start /wrap /judge and the "How I work" file,
-# prompts/ for the embedded commands), linked into each agent harness on this
-# machine. pi turns every .md file in its prompts folder into a slash command:
-# start.md -> /start. Linked, so a `git pull` in ~/Embed_WF updates them.
+# Two sources, linked into each agent harness on this machine: the workflow
+# (found through WORKFLOW_DIR) for /start /wrap /judge and the "How I work"
+# file, and prompts/ for the embedded commands. Each .md file becomes a slash
+# command: start.md -> /start.
+if [[ -z "${WORKFLOW_DIR:-}" || ! -f "${WORKFLOW_DIR}/install.sh" ]]; then
+  echo "Stopped: the short-loop workflow is not installed yet (WORKFLOW_DIR is ${WORKFLOW_DIR:-not set})." >&2
+  echo "Clone the workflow repository, run  bash <that folder>/install.sh  once," >&2
+  echo "open a new terminal, and run this script again. Steps 1-4 are already done." >&2
+  exit 1
+fi
 mkdir -p "${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"   # so the installer sets pi up even before its first run
 bash "$REPO/tools/install-workflow.sh"
 
@@ -78,11 +88,8 @@ exec "$VENV/bin/python" "$REPO/bench/bench-ble-scan" "\$@"
 EOF
 chmod +x "$BIN/bench-ble-scan"
 ln -sfn "$REPO/tools/new_project.sh" "$BIN/new-embedded-project"
-cat >"$BIN/new-project" <<EOF
-#!/usr/bin/env bash
-exec bash "$REPO/workflow/new-project.sh" "\$@"
-EOF
-chmod +x "$BIN/new-project" "$REPO/tools/new_project.sh"
+ln -sfn "$WORKFLOW_DIR/new-project.sh" "$BIN/new-project"   # any other project: the workflow's own generator
+chmod +x "$REPO/tools/new_project.sh"
 echo "  bench-wifi, bench-mqtt, bench-ble-scan, new-embedded-project, new-project"
 
 step "7/7 Checks"

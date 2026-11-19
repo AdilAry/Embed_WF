@@ -86,8 +86,9 @@ session, with two gates that are yours: you approve a five-bullet plan before an
 file changes, and you check the result before the next item starts. The agent
 still iterates on its own between the gates, against the tests. That costs
 fewer tokens (every session starts small and ends before the context rots) and
-keeps you in the loop by design. The method is the short-loop workflow in
-[workflow/WORKFLOW.md](../workflow/WORKFLOW.md); the embedded parts are built on top of it.
+keeps you in the loop by design. The method is the short-loop workflow, a separate repository (its WORKFLOW.md
+explains it); the embedded parts are built on top of it and use only what its
+§8, "Building a kit on this workflow", lists.
 
 A word on the word: video 3's "harness" is the whole coupling of agent, method and
 test bench. **pi** is an *agent harness*, the program that lets a model edit files
@@ -114,13 +115,9 @@ Embed_WF/
 │   ├── setup-root.sh       part 1: packages, embdev user, permissions (run with sudo)
 │   └── setup-user.sh       part 2: arduino-cli, ESP32 core, pi, short-loop workflow, bench tools
 ├── bench/                  bench-wifi, bench-mqtt, bench-ble-scan (the "test lab")
-├── workflow/               the short-loop workflow for ANY software project: guide,
-│                           /start /wrap /judge, "How I work" file, generic project starter.
-│                           Also shipped on its own as a zip (tools/build-workflow-zip.sh)
 ├── prompts/                the embedded slash commands: /define /commission /datasheet
 │                           /change-request /new-project
-├── tools/                  new_project.sh (creates ~/projects/<name>), install-workflow.sh,
-│                           build-workflow-zip.sh
+├── tools/                  new_project.sh (creates ~/projects/<name>), install-workflow.sh
 ├── tests/                  tests for the template's Python tools (run by CI)
 └── template/               a complete, working starter project (see below)
 ```
@@ -248,13 +245,33 @@ gh repo clone adilary/embed_wf ~/Embed_WF
 bash ~/Embed_WF/devbox/setup-user.sh
 ```
 
+The first run stops at step 5, because the short-loop workflow isn't installed
+yet and its installer needs an agent on the machine, which steps 1–4 just
+installed. Clone the workflow repository next to the kit and run its installer:
+
+```bash
+git clone <the workflow repository's URL> ~/Workflow
+```
+
+```bash
+bash ~/Workflow/install.sh
+```
+
+Open a **new** terminal (the installer saved `WORKFLOW_DIR` in `~/.bashrc`) and
+run `setup-user.sh` again; it skips what is already done.
+
+```bash
+bash ~/Embed_WF/devbox/setup-user.sh
+```
+
 This installs arduino-cli, the ESP32 core (≈ 1 GB, pinned to 3.3.10) and Arduino_GFX
 (1.6.8). It also installs **pi** and the short-loop workflow: the slash commands
 are linked into `~/.pi/agent/prompts/` (that is what makes `/start`, `/wrap`, `/define` and
-friends exist; linked, so a later `git pull` in `~/Embed_WF` updates them by itself) and your
+friends exist; linked, so a later `git pull` in `~/Embed_WF` or `~/Workflow` updates them by itself) and your
 "How I work" file is copied to `~/.pi/agent/AGENTS.md`. Open that
 file once and fill its one bracket. Last, it installs the `bench-*` commands,
-`new-embedded-project` and `new-project`.
+`new-embedded-project`, and `new-project`, a link to the workflow's own generator
+for projects that aren't embedded.
 
 Open a **new** terminal and connect pi to a model:
 
@@ -273,7 +290,7 @@ count on it). If you want Claude models on your subscription, use Claude Code.
 The projects don't care: each has an `AGENTS.md` for pi and a one-line
 `CLAUDE.md` that makes Claude Code read the same file, and
 `tools/install-workflow.sh` installs the same slash commands for both. See
-[WORKFLOW.md](../workflow/WORKFLOW.md) §6. If you do run Claude Code on the dev box, run
+the workflow's WORKFLOW.md §6. If you do run Claude Code on the dev box, run
 it as `embdev` too.
 
 ### B4. Smoke test with a board
@@ -538,8 +555,8 @@ and only turns PASS after a run on each.
 - **Agent harness**: the program around the model that gives it those hands. Here: **pi**.
 - **pi**: an open-source terminal coding agent (pi.dev). Works with many model providers. Never asks before running a command.
 - **AGENTS.md**: a file pi reads automatically at the start of every session in that folder. It's the project's standing instructions.
-- **Slash command / prompt template**: a reusable instruction file, invoked as `/name`. Ours live in `workflow/templates/commands/` and `prompts/`; `tools/install-workflow.sh` links them into pi (`~/.pi/agent/prompts/`) and Claude Code (`~/.claude/commands/`).
-- **Short loop**: one task per session, with files (`PROGRESS.md` first) carrying the memory to the next one. See workflow/WORKFLOW.md.
+- **Slash command / prompt template**: a reusable instruction file, invoked as `/name`. Ours come from the short-loop workflow (`/start`, `/wrap`, `/judge`) and `prompts/`; `tools/install-workflow.sh` links them into pi (`~/.pi/agent/prompts/`) and Claude Code (`~/.claude/commands/`).
+- **Short loop**: one task per session, with files (`PROGRESS.md` first) carrying the memory to the next one. See WORKFLOW.md in the workflow repository (`$WORKFLOW_DIR`).
 - **Done gate**: the command a task must pass before it counts as finished. Here: `make trace RUN=1 REQS="…"`.
 - **FSD**: Functional Specification Document. What the product must do, as testable requirements.
 - **FQBN**: Fully Qualified Board Name, arduino-cli's string for "board + all Tools menu settings".

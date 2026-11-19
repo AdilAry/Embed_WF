@@ -7,12 +7,12 @@
 # the project name, and makes the first git commit. Then:
 #   cd ~/projects/<name> && pi          and type  /define
 #
-# For any other kind of software project use the short-loop starter instead:
-#   new-project <name>                  (= workflow/new-project.sh)
+# For any other kind of software project, use the short-loop workflow's own
+# generator instead:  bash "$WORKFLOW_DIR/new-project.sh" <name>
+# (on the dev box, setup-user.sh links it as `new-project`).
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
-if [[ "${1:-}" == "--generic" ]]; then shift; exec bash "$REPO/workflow/new-project.sh" "$@"; fi
 NAME="${1:-}"
 PARENT="${2:-$HOME/projects}"
 

@@ -1,13 +1,17 @@
 # AGENTS.md — working on the Embed_WF repo itself
 
-This repo is the **workflow kit**, not a project. It has two layers:
+This repo is the **embedded kit**, not a project: an ESP32 project template,
+embedded commands, a test bench and dev-box setup, built on the owner's
+short-loop workflow (one task per session, files as memory).
 
-- `workflow/` — the owner's short-loop workflow for any software project (one
-  task per session, files as memory). It is self-contained and is also shipped
-  on its own as a zip, so **nothing in it may mention this kit, ESP32, `make`
-  targets or the FSD**.
-- everything else — the embedded layer built on it: ESP32 project template,
-  embedded commands, test bench, dev-box setup.
+The workflow is a **separate repository** and an external dependency. Its
+location on a machine is `$WORKFLOW_DIR`, which the workflow's own installer
+sets. This kit relies only on the contract in the workflow's WORKFLOW.md §8,
+"Building a kit on this workflow" (the README names the contract date it was
+written against): the commands `/start`, `/wrap`, `/judge`, the AGENTS.md
+fields, the PROGRESS.md sections, `docs/history.md` and `docs/decisions.md`,
+the plan, `WORKFLOW_DIR` and the install line. Nothing else from the workflow
+is copied or restated here.
 
 Real projects are created into `~/projects/<name>`, never inside this repo:
 agents load `AGENTS.md` from every parent folder too.
@@ -17,21 +21,13 @@ Prefer simple, well-commented scripts over clever ones.
 
 ## Layout
 
-- `workflow/WORKFLOW.md` — the method, and what changed between versions and why.
-- `workflow/templates/commands/` — `/start`, `/wrap`, `/judge`. They only use the
-  words a project's AGENTS.md defines: Check, Done gate, Run limit, Push, and
-  the optional "At /start also" / "At /wrap also" steps.
-- `workflow/templates/user-level/AGENTS.md` — the owner's "How I work" file,
-  installed as each harness's global instructions.
-- `workflow/templates/project/` — starter for a non-embedded project. One
-  template; whole sections marked `[IF ...]` are deleted when they don't apply.
-- `workflow/install.sh`, `workflow/new-project.sh` — installer and generator
-  for the generic layer. `tools/build-workflow-zip.sh` packs `workflow/`.
 - `prompts/` — embedded-only commands (`/define`, `/commission`, `/datasheet`,
-  `/change-request`, `/new-project`). Same file format as the generic ones:
-  frontmatter `description` + `argument-hint`, `$ARGUMENTS` in the body, which
-  both pi prompt templates and Claude Code commands accept.
-- `tools/install-workflow.sh` — installs both command sets (links them).
+  `/change-request`, `/new-project`). Same file format as the workflow's
+  commands: frontmatter `description` + `argument-hint`, `$ARGUMENTS` in the
+  body.
+- `tools/install-workflow.sh` — installs the workflow's commands and these,
+  through `"$WORKFLOW_DIR/install.sh"`. Stops if `WORKFLOW_DIR` isn't set.
+- `tools/new_project.sh` — creates an embedded project from `template/`.
 - `template/` — embedded starter project. Must always pass `make host-test`,
   `make compile` and `python3 tools/trace.py --strict` (the `template` GitHub
   workflow enforces this). Nothing in it may depend on a particular harness.
@@ -46,13 +42,13 @@ Prefer simple, well-commented scripts over clever ones.
 
 ## Rules
 
-- A change to how sessions work belongs in `workflow/` first, then in the
-  embedded files that build on it. Never fix it only in the embedded layer.
-- The always-loaded files are a budget: a project `AGENTS.md` under ~120 lines,
-  `PROGRESS.md` under ~60, the user-level file ~50. Point to detail, don't
+- A change to how sessions work belongs in the workflow repository first.
+  Never fix it only here, and never restate the loop or its stop rules here.
+  If this kit needs a word the §8 list doesn't have, list it for the owner,
+  who adds it there. Don't edit the workflow repository from here.
+- The always-loaded files are a budget: `template/AGENTS.md` under ~120 lines,
+  `template/PROGRESS.md` under ~60 (CI checks both). Point to detail, don't
   paste it. One fact, one place.
-- `workflow/templates/project/` uses the bracket markers from WORKFLOW.md §2
-  and no other square brackets, so `grep '\['` finds what is unfilled.
 - Keep the pinned versions in `template/Makefile` the single source of truth
   (`devbox/setup-user.sh` reads them from there).
 - When a project discovers something true for the whole board, it goes into

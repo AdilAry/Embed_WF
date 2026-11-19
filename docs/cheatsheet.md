@@ -34,7 +34,7 @@ Around 40% context: finish the step and `/wrap`. Wrong path: go back (`/tree`) i
 | Build one plan item | `/start` … `/wrap` |
 | Add a part | put the PDF in `datasheets/`, then `/datasheet <file>.pdf` |
 | Change something | `/change-request <what>`, `/wrap`, then `/start` on the new item |
-| Any other software project | `new-project <name>` in the shell (see workflow/WORKFLOW.md) |
+| Any other software project | `new-project <name>` in the shell: the workflow's own generator (its WORKFLOW.md §3) |
 | Resume last session | `pi -c` (latest) or `pi -r` (pick one) |
 
 ## make targets (in a project)

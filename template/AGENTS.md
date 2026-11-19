@@ -27,17 +27,17 @@ make boards        # connected boards and which is registered as R / C
 ```
 `BOARD=R` or `BOARD=C` (or `PORT=/dev/ttyACM1`) on any target picks the board. Use `BOARD=` whenever both are plugged in. Serial output of every tool call is appended to `build/serial.log`.
 
-## Workflow: one task per session
-- `/start <plan item or REQ IDs>` begins a session, `/wrap` ends it, then the owner clears the session. A fresh session must be able to continue from PROGRESS.md alone.
-- A task is **one item of `docs/PLAN.md`**, not a whole phase. If an item doesn't fit one session, propose splitting it.
-- Between the owner's OK and `/wrap` you work the item in a closed loop, without asking:
-  1. Write or extend the tests first, at the fastest tier that can prove the requirement (host > target > bench). Pure logic goes in `firmware/src/logic/` so it can be host-tested.
-  2. Implement.
-  3. `make host-test` until green. Don't compile firmware while host tests fail.
-  4. `make compile`. Fix errors and new warnings.
-  5. `make upload && make boot-check && make target-test`, then `make bench-test` if the item has bench requirements. On a failure read the output and `build/serial.log`, form one hypothesis, add `Serial.printf("[subsystem] ...")` if unsure, fix, rerun.
-  6. Run the Done gate. `STALE` means the source changed after that tier last ran: rerun the tier, don't argue with it.
-- Stop and ask the owner when: a test needs a physical action (wiring, a board that isn't plugged in, a button); the same failure survives 3 different fixes; the Run limit is reached; a requirement is ambiguous, contradicts another, or you want to change the FSD (that is `/change-request`).
+## Working an item
+Project facts for the loop `/start` runs; its stop rules apply as they are.
+- A task is **one item of `docs/PLAN.md`**, not a whole phase.
+- Test tiers, in this order:
+  1. Tests first, at the fastest tier that can prove the requirement (host > target > bench). Pure logic goes in `firmware/src/logic/` so it can be host-tested.
+  2. `make host-test` until green. Don't compile firmware while host tests fail.
+  3. `make compile`. Fix errors and new warnings.
+  4. `make upload && make boot-check && make target-test`, then `make bench-test` if the item has bench requirements. On a failure read the output and `build/serial.log`, form one hypothesis, add `Serial.printf("[subsystem] ...")` if unsure, fix, rerun.
+  5. The Done gate. `STALE` means the source changed after that tier last ran: rerun the tier, don't argue with it.
+- Wiring, plugging in a board, pressing a button: these need the owner's hands.
+- A change to the FSD is never part of a task. Propose it as `/change-request`.
 - **Flashing a board that drives something.** A bare board on USB may be flashed without asking. If FSD §3 says the board drives anything that can move, heat, switch mains or charge a battery (motor, relay, heater, pump, a load on a free pin), put "this session flashes the board" in the /start plan and flash only after the owner's OK for this session. The firmware must leave those outputs off at boot and during `selftest`.
 
 ## At /wrap also
@@ -69,7 +69,6 @@ build/             results and logs (gitignored)
 
 ## Rules
 - The FSD is the boss. If code and FSD disagree, ask; don't silently change either.
-- Never weaken, skip or delete a test to get green. If a test is wrong, say why and ask.
 - Never edit files under `build/`, and never write a result log or `build_id.h` by hand. They are evidence; only the make targets produce them.
 - Every target test has a stable ID (`T-XXXX`), printed as `TEST:<id>:PASS|FAIL:<detail>` and named in the FSD's Test column, as are host test names and bench test functions: `make trace` only counts tests the FSD names. A target test that must hold on both boards is written `T-XXXX@R, T-XXXX@C`.
 - A test must be able to fail. Break the code once (or reason it through) before trusting a new test.

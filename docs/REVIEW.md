@@ -1,7 +1,26 @@
 # Review history of the Embed_WF kit
 
-Six passes so far. The newest is first. None of them has touched your real
+Seven passes so far. The newest is first. None of them has touched your real
 boards or the T480s, so the last section is the list that matters most.
+
+## Pass 7 (November 2026): the workflow becomes an external dependency
+
+The short-loop workflow now lives in its own repository. This kit no longer
+carries a copy of it: it finds the workflow through `WORKFLOW_DIR` (set by the
+workflow's installer) and relies only on its WORKFLOW.md §8 contract, dated
+19 November 2026. Session 1 of 3; sessions 2 (Claude Code as the agent, pi for
+later) and 3 (Debian on the dev box, if chosen) follow.
+
+| # | Change | Why |
+|---|---|---|
+| 1 | `workflow/`, `tools/build-workflow-zip.sh` and the CI steps that checked them are gone | The copy had already fallen behind the workflow (the stop rule for changed tests, ticking only plans with checkboxes). The checks on this kit's own files stay. |
+| 2 | `tools/install-workflow.sh` and `devbox/setup-user.sh` stop with a clear message if `WORKFLOW_DIR` isn't set; they never guess a path. `new-project` on the dev box is a link to the workflow's own generator | One variable, set in one place. `new_project.sh --generic` is gone: it only forwarded to that generator. |
+| 3 | `template/AGENTS.md` no longer restates the loop or its stop rules. It keeps only embedded facts: one plan item per task, the test-tier order, `STALE`, physical actions, spec changes via `/change-request`, the flashing rule | The restated copy had already missed the rule against editing a test to get green. "Never weaken a test" in Rules went for the same reason: `/start` has it. |
+| 4 | Repo `AGENTS.md`, README, GUIDE, cheatsheet, troubleshooting point to the external workflow | The README names the contract date. |
+
+Needs a change in the workflow repository (listed for the owner, not made here):
+its `install.sh` exits before saving `WORKFLOW_DIR` when no agent is installed
+yet, so a fresh dev-box account has to run `setup-user.sh` twice.
 
 ## Pass 6 (November 2026): five points on the standalone workflow
 
