@@ -20,6 +20,8 @@
       "Bash(git commit:*)",
       "Bash(git show --stat:*)",
       "Bash(git push:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
       "Bash(ls:*)",
       "Bash(grep:*)",
       "Bash(find:*)",

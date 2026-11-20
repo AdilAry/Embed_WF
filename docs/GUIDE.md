@@ -419,7 +419,8 @@ flashes and tests twenty times would wait on you twenty times, so each project
 has an allowlist in `.claude/settings.json`: `make`, `tools/esp_serial.py`,
 `tools/trace.py`, read-only `arduino-cli` and `gh run` commands, and the git
 commands the short-loop workflow runs (its WORKFLOW.md §8: pull, status, add,
-commit, show --stat, push) run without asking. Anything else
+commit, show --stat, push), plus read-only `git diff` and `git log`, run without
+asking. Anything else
 still asks. It denies `sudo`, force-push, `git reset --hard`, and edits to the
 evidence under `build/`.
 
