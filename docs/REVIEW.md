@@ -11,7 +11,7 @@ nothing presents it as the default any more.
 | # | Change | Why |
 |---|---|---|
 | 1 | `devbox/setup-user.sh` installs Claude Code instead of pi, and checks `WORKFLOW_DIR` before anything else | One run: clone the workflow, run its `install.sh`, open a new terminal, run `setup-user.sh`. No 1 GB download before a missing prerequisite is found. |
-| 2 | `template/.claude/settings.json`: an allowlist modelled on Gamedev_WF's, so both kits handle permissions the same way. Allowed: `make`, the two tools, read-only `arduino-cli` and `gh run`, everyday git including `git pull`. Denied: `sudo`, force-push, `git reset --hard`, edits under `build/` and to `build_id.h` | Without it every `make` waits for approval, which ends the loop. `git pull` is in it because `/start` runs it first. The `build/` deny turns the "evidence is never edited by hand" rule into a lock for the edit tools. CI checks the file is valid JSON. |
+| 2 | `template/.claude/settings.json`: an allowlist modelled on Gamedev_WF's, so both kits handle permissions the same way. Allowed: `make`, the two tools, read-only `arduino-cli` and `gh run`, and exactly the git commands WORKFLOW.md §8 lists (contract of 20 Nov 2026: `pull`, `status`, `add`, `commit`, `show --stat`, `push`). Denied: `sudo`, force-push, `git reset --hard`, edits under `build/` and to `build_id.h` | Without it every `make` waits for approval, which ends the loop. Built from the §8 line, so a session never waits on a prompt the workflow causes; when that line changes, so does this list. Other git commands (`diff`, `log`, branches) still ask. The `build/` deny turns the "evidence is never edited by hand" rule into a lock for the edit tools. CI checks the file is valid JSON. |
 | 3 | GUIDE §6 rewritten: the allowlist runs the loop, the account is still the wall | `make` runs whatever the Makefile says, and the agent may edit the Makefile. The list is a convenience, not a lock. |
 | 4 | README, GUIDE, cheatsheet, troubleshooting, planning-chat, machines.md, `new_project.sh`, `/new-project`: Claude Code commands (`claude`, `/clear`, `Esc Esc`, `/context`, `claude -c`) instead of pi's | pi facts stay where they are labelled "later". |
 | 5 | GUIDE Part A: the Windows line for the kit's commands (`Copy-Item prompts\*.md ...`), as WORKFLOW.md §8 gives it | For Claude Code on the Legion; boards are still flashed from the dev box only. |
@@ -21,8 +21,8 @@ nothing presents it as the default any more.
 
 The short-loop workflow now lives in its own repository. This kit no longer
 carries a copy of it: it finds the workflow through `WORKFLOW_DIR` (set by the
-workflow's installer) and relies only on its WORKFLOW.md §8 contract, dated
-19 November 2026. Session 1 of 3; sessions 2 (Claude Code as the agent, pi for
+workflow's installer) and relies only on its WORKFLOW.md §8 contract (then dated
+19 November 2026; now 20 November). Session 1 of 3; sessions 2 (Claude Code as the agent, pi for
 later) and 3 (Debian on the dev box, if chosen) follow.
 
 | # | Change | Why |
@@ -32,7 +32,7 @@ later) and 3 (Debian on the dev box, if chosen) follow.
 | 3 | `template/AGENTS.md` no longer restates the loop or its stop rules. It keeps only embedded facts: one plan item per task, the test-tier order, `STALE`, physical actions, spec changes via `/change-request`, the flashing rule | The restated copy had already missed the rule against editing a test to get green. "Never weaken a test" in Rules went for the same reason: `/start` has it. |
 | 4 | Repo `AGENTS.md`, README, GUIDE, cheatsheet, troubleshooting point to the external workflow | The README names the contract date. |
 
-Found here; the owner fixes it in the workflow repository: its `install.sh`
+Found here and fixed in workflow v2 (20 Nov): its `install.sh`
 exited before saving `WORKFLOW_DIR` when no agent was installed yet, which would
 have made a fresh dev-box account run `setup-user.sh` twice. With the fix it runs
 once: clone the workflow, run its `install.sh`, open a new terminal, then
