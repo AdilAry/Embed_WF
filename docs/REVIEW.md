@@ -1,14 +1,28 @@
 # Review history of the Embed_WF kit
 
-Seven passes so far. The newest is first. None of them has touched your real
+Eight passes so far. The newest is first. None of them has touched your real
 boards or the T480s, so the last section is the list that matters most.
+
+## Pass 8 (November 2026): Claude Code is the agent, pi is for later
+
+Session 2 of 3. pi stays possible for the day the owner can host models, but
+nothing presents it as the default any more.
+
+| # | Change | Why |
+|---|---|---|
+| 1 | `devbox/setup-user.sh` installs Claude Code instead of pi, and checks `WORKFLOW_DIR` before anything else | One run: clone the workflow, run its `install.sh`, open a new terminal, run `setup-user.sh`. No 1 GB download before a missing prerequisite is found. |
+| 2 | `template/.claude/settings.json`: an allowlist modelled on Gamedev_WF's, so both kits handle permissions the same way. Allowed: `make`, the two tools, read-only `arduino-cli` and `gh run`, and exactly the git commands WORKFLOW.md §8 lists (contract of 20 Nov 2026: `pull`, `status`, `add`, `commit`, `show --stat`, `push`). Denied: `sudo`, force-push, `git reset --hard`, edits under `build/` and to `build_id.h` | Without it every `make` waits for approval, which ends the loop. Built from the §8 line, so a session never waits on a prompt the workflow causes; when that line changes, so does this list. Other git commands (`diff`, `log`, branches) still ask. The `build/` deny turns the "evidence is never edited by hand" rule into a lock for the edit tools. CI checks the file is valid JSON. |
+| 3 | GUIDE §6 rewritten: the allowlist runs the loop, the account is still the wall | `make` runs whatever the Makefile says, and the agent may edit the Makefile. The list is a convenience, not a lock. |
+| 4 | README, GUIDE, cheatsheet, troubleshooting, planning-chat, machines.md, `new_project.sh`, `/new-project`: Claude Code commands (`claude`, `/clear`, `Esc Esc`, `/context`, `claude -c`) instead of pi's | pi facts stay where they are labelled "later". |
+| 5 | GUIDE Part A: the Windows line for the kit's commands (`Copy-Item prompts\*.md ...`), as WORKFLOW.md §8 gives it | For Claude Code on the Legion; boards are still flashed from the dev box only. |
+| 6 | The kit's docs and prompts no longer describe how `/start` and `/wrap` work inside. The cheatsheet and GUIDE §5 point to WORKFLOW.md §4; troubleshooting drops three rows WORKFLOW.md §7 already has; `/define`, `/commission` and `/change-request` say what "Next" and the history entry must hold, not what `/wrap` does | Only the §8 contract words are used. |
 
 ## Pass 7 (November 2026): the workflow becomes an external dependency
 
 The short-loop workflow now lives in its own repository. This kit no longer
 carries a copy of it: it finds the workflow through `WORKFLOW_DIR` (set by the
-workflow's installer) and relies only on its WORKFLOW.md §8 contract, dated
-19 November 2026. Session 1 of 3; sessions 2 (Claude Code as the agent, pi for
+workflow's installer) and relies only on its WORKFLOW.md §8 contract (then dated
+19 November 2026; now 20 November). Session 1 of 3; sessions 2 (Claude Code as the agent, pi for
 later) and 3 (Debian on the dev box, if chosen) follow.
 
 | # | Change | Why |
@@ -18,9 +32,11 @@ later) and 3 (Debian on the dev box, if chosen) follow.
 | 3 | `template/AGENTS.md` no longer restates the loop or its stop rules. It keeps only embedded facts: one plan item per task, the test-tier order, `STALE`, physical actions, spec changes via `/change-request`, the flashing rule | The restated copy had already missed the rule against editing a test to get green. "Never weaken a test" in Rules went for the same reason: `/start` has it. |
 | 4 | Repo `AGENTS.md`, README, GUIDE, cheatsheet, troubleshooting point to the external workflow | The README names the contract date. |
 
-Needs a change in the workflow repository (listed for the owner, not made here):
-its `install.sh` exits before saving `WORKFLOW_DIR` when no agent is installed
-yet, so a fresh dev-box account has to run `setup-user.sh` twice.
+Found here and fixed in workflow v2 (20 Nov): its `install.sh`
+exited before saving `WORKFLOW_DIR` when no agent was installed yet, which would
+have made a fresh dev-box account run `setup-user.sh` twice. With the fix it runs
+once: clone the workflow, run its `install.sh`, open a new terminal, then
+`setup-user.sh` (pass 8).
 
 ## Pass 6 (November 2026): five points on the standalone workflow
 
@@ -108,9 +124,10 @@ mapped from the three videos onto your two laptops and two boards.
 
 Nothing here has run on real hardware. In the order you will meet them:
 
-1. **pi and the slash commands.** After `setup-user.sh`, start `pi` in a project
-   and type `/` : `/start`, `/wrap`, `/define` and the others should be offered. If
-   not, see troubleshooting.
+1. **Claude Code, the allowlist and the slash commands.** After `setup-user.sh`,
+   start `claude` in a project and type `/` : `/start`, `/wrap`, `/define` and
+   the others should be offered. Then `make check` must run without a permission
+   prompt. If not, see troubleshooting.
 2. **The serial tool against a real board.** Everything in the loop goes through
    it. `/commission` exercises it step by step; the first one may need fixes.
 3. **`make open-check`.** On the ESP32-S3's built-in USB the DTR/RTS lines double

@@ -16,5 +16,5 @@ Requested change: $ARGUMENTS
 4. Add a new phase (or items) to `docs/PLAN.md` referencing the REQ IDs.
 5. `make trace`: the new/changed requirements show `NO TEST` or `NOT RUN`; nothing else should
    change status.
-6. Stop here. Tell the owner to type `/wrap` (it puts the first new plan item under "Next" in
-   `PROGRESS.md`); the implementation is a fresh session: `/start <that item>`.
+6. Stop here. Tell the owner to type `/wrap`. Item 1 under "Next" in `PROGRESS.md` must then be
+   the first new plan item; the implementation is a fresh session: `/start <that item>`.

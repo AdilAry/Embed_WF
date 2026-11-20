@@ -35,6 +35,9 @@ jobs:
       - name: Shell scripts parse
         run: for f in ../devbox/*.sh ../tools/*.sh ../bench/bench-wifi ../bench/bench-mqtt; do bash -n "$f"; done
 
+      - name: The Claude Code allowlist is valid JSON
+        run: python3 -m json.tool .claude/settings.json > /dev/null
+
       - name: Prompt templates have frontmatter with a description
         run: |
           for f in ../prompts/*.md; do

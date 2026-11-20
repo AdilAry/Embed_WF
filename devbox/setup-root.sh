@@ -8,7 +8,8 @@
 #
 # "embdev" is the separate, NON-admin Linux user the AI agent will work as.
 # It gets serial-port access, network-hotspot control and nothing else - so an
-# agent that runs every command without asking (pi does) can't read your old files or sudo.
+# agent that runs commands without asking (Claude Code does, for everything its
+# allowlist covers) can't read your old files or sudo.
 #
 # Safe to run again; every step checks before it changes anything.
 set -euo pipefail

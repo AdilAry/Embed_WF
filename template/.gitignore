@@ -11,6 +11,9 @@ firmware/src/build_id.h
 firmware/src/secrets.h
 .env
 
+# per-machine agent settings (the shared allowlist is .claude/settings.json)
+.claude/settings.local.json
+
 # editor noise
 .vscode/*
 !.vscode/extensions.json

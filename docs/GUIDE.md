@@ -2,8 +2,8 @@
 
 This guide turns the ideas from the three videos in your notes into a setup that
 runs on **what you already own**: the Legion laptop, the ThinkPad T480s, your two
-Guition JC4827W543 boards and the **pi** coding agent with whichever model
-provider you use. Nothing to buy except maybe an Ethernet cable.
+Guition JC4827W543 boards and **Claude Code** on your Claude plan. Nothing to buy
+except maybe an Ethernet cable.
 
 Read it top to bottom once. After that, use the [cheat sheet](cheatsheet.md).
 
@@ -21,7 +21,7 @@ To make that safe and practical you need four things:
 
 | Need | Video's answer | Your answer |
 |---|---|---|
-| An agent that can edit a whole project and run commands | Claude Code | **pi** (pi.dev), your harness of choice |
+| An agent that can edit a whole project and run commands | Claude Code | **Claude Code** too, with an allowlist so the build-and-test loop runs without prompts |
 | A box where the agent may do anything without wrecking your real PC | Proxmox VM / container | **The T480s**, under a separate Linux user `embdev` |
 | Hands and eyes on the real board | Raspberry Pi "workbench" | **The T480s again**: USB to the boards, its Wi-Fi as a test hotspot, MQTT broker, Bluetooth |
 | A safety net and history | GitHub | GitHub (+ free CI that compiles every push) |
@@ -30,7 +30,7 @@ To make that safe and practical you need four things:
  ┌──────────────────────────┐   SSH / VS Code    ┌────────────────────────────────┐   USB-C   ┌──────────────┐
  │ Legion (Windows)         │ ─────────────────▶ │ T480s (Linux Mint) "dev box"   │ ────────▶ │ Guition R+C  │
  │ - chat app: ideas, spec  │                    │ - user embdev (no sudo)        │           │ ESP32-S3     │
- │   reviews                │                    │ - pi agent + arduino-cli       │ ◀─ Wi-Fi ─│ boards       │
+ │   reviews                │                    │ - Claude Code + arduino-cli    │ ◀─ Wi-Fi ─│ boards       │
  │ - VS Code: view files    │                    │ - bench-wifi (test hotspot)    │  (test    └──────────────┘
  │ - your personal stuff    │                    │ - bench-mqtt, bench-ble-scan   │  network)
  └──────────────────────────┘                    └───────────────┬────────────────┘
@@ -41,8 +41,8 @@ To make that safe and practical you need four things:
 
 **Why not run the agent on the Windows laptop directly?** You can, but the videos'
 advice is sound: an agent you let run freely should live on a machine where a
-mistake costs nothing. That matters even more with pi, which **never asks before
-running a command** (see §6). The Legion holds your personal life. If it still
+mistake costs nothing. That matters here because the template's allowlist lets
+the agent run `make`, the tools and git **without asking** (see §6). The Legion holds your personal life. If it still
 runs Windows 10, it is also out of security updates: the free EU extended-update
 year ran out in October 2026. (Side note: the Legion's i5-9300H is on Microsoft's
 Windows 11 CPU list, so a free upgrade is probably open to you. Check with
@@ -53,7 +53,7 @@ the smoother environment for `make`, serial ports, hotspots and the tooling here
 uses the Pi because its dev machine is a VM with no free USB or Wi-Fi. Your T480s
 has real USB ports, real Wi-Fi and Bluetooth, and an Ethernet port, so it can be
 the dev box *and* the test bench. Its 8 GB of RAM and 4-core i5 are plenty for
-arduino-cli and pi. The model itself runs in the cloud.
+arduino-cli and Claude Code. The model itself runs in the cloud.
 
 ---
 
@@ -64,9 +64,9 @@ arduino-cli and pi. The model itself runs in the cloud.
 | 0 Vibe coding | copy/paste from a chat | What you've probably done in a chat app. Still fine for quick questions. |
 | 1 Spec-driven | describe, don't code | `docs/IDEA.md` |
 | 2 FSD documents | spec as a Markdown file | `docs/FSD.md`, generated with `/define` |
-| 3 Agents | an agent edits the project folder | pi on the dev box |
+| 3 Agents | an agent edits the project folder | Claude Code on the dev box |
 | 4 GitHub | history + protection | every project is a repo; CI compiles each push |
-| 5 Execution control | agent runs commands itself | pi does this by default, with no permission prompts |
+| 5 Execution control | agent runs commands itself | the template's `.claude/settings.json` allowlist: `make`, the tools and git run without prompts |
 | 6 Dev VM | isolate the agent | `embdev` user on the T480s |
 | 7 Parallel projects + memory | one folder per project, an instructions file as memory | `~/projects/<name>/`, each with its own `AGENTS.md`, `PROGRESS.md`, `docs/history.md` |
 | 8 CLI build/flash/monitor | agent sees compiler + serial output | `make loop`, `tools/esp_serial.py` |
@@ -91,8 +91,8 @@ explains it); the embedded parts are built on top of it and use only what its
 §8, "Building a kit on this workflow", lists.
 
 A word on the word: video 3's "harness" is the whole coupling of agent, method and
-test bench. **pi** is an *agent harness*, the program that lets a model edit files
-and run commands. This repo supplies the rest: the method (`prompts/`), the
+test bench. **Claude Code** is the *agent harness*, the program that lets a model
+edit files and run commands. This repo supplies the rest: the method (`prompts/`), the
 project skeleton (`template/`) and the bench (`bench/`).
 
 ---
@@ -113,7 +113,7 @@ Embed_WF/
 │   └── boards/guition-jc4827w543.md   board reference (your file); copied into every project
 ├── devbox/
 │   ├── setup-root.sh       part 1: packages, embdev user, permissions (run with sudo)
-│   └── setup-user.sh       part 2: arduino-cli, ESP32 core, pi, short-loop workflow, bench tools
+│   └── setup-user.sh       part 2: arduino-cli, ESP32 core, Claude Code, slash commands, bench tools
 ├── bench/                  bench-wifi, bench-mqtt, bench-ble-scan (the "test lab")
 ├── prompts/                the embedded slash commands: /define /commission /datasheet
 │                           /change-request /new-project
@@ -128,8 +128,9 @@ console (`help`, `info`, `selftest`, `text …`, `bl …`). It also has 14 host
 tests, 7 on-board tests and a pytest bench suite. Its FSD already lists the
 requirements those tests prove, so `make trace` shows how traceability works.
 Every new project starts from it, so the plumbing is proven before you add
-features. Nothing in the template depends on pi: it is `make` and Python, so it
-would work the same under another agent.
+features. Nothing in the template depends on Claude Code: it is `make` and
+Python, so it would work the same under another agent. The one Claude Code file,
+`.claude/settings.json`, only saves you from approving every `make`.
 
 ---
 
@@ -149,7 +150,16 @@ would work the same under another agent.
 5. **A chat app stays useful** for thinking out loud, drafting `IDEA.md`,
    explaining concepts, or reviewing an FSD you paste in. See
    [planning-chat.md](planning-chat.md) for a ready-made setup. Chat is level
-   0–2; pi on the dev box is level 3+.
+   0–2; Claude Code on the dev box is level 3+.
+6. **Optional: Claude Code on Windows too**, for planning sessions or projects that
+   aren't embedded. Install the short-loop workflow there as its WORKFLOW.md §3
+   says for Windows. To add this kit's commands, clone Embed_WF on Windows and
+   run, from its folder:
+   ```powershell
+   Copy-Item prompts\*.md "$env:USERPROFILE\.claude\commands\"
+   ```
+   It's a copy: run it again when the commands change. Boards are flashed from
+   the dev box only.
 
 > Arduino IDE on Windows still works for quick experiments. The board file's
 > Tools settings are unchanged. Just don't flash the same board from both
@@ -241,13 +251,10 @@ every repository you own. Your call; §6 explains the stakes.
 gh repo clone adilary/embed_wf ~/Embed_WF
 ```
 
-```bash
-bash ~/Embed_WF/devbox/setup-user.sh
-```
-
-The first run stops at step 5, because the short-loop workflow isn't installed
-yet and its installer needs an agent on the machine, which steps 1–4 just
-installed. Clone the workflow repository next to the kit and run its installer:
+First the short-loop workflow, a separate repository. Clone it next to the kit
+and run its installer once. It saves `WORKFLOW_DIR` in `~/.bashrc`, which is how
+the kit finds it. (No agent is installed yet, so it may say it found none; the
+kit's setup runs it again once Claude Code is there.)
 
 ```bash
 git clone <the workflow repository's URL> ~/Workflow
@@ -257,41 +264,39 @@ git clone <the workflow repository's URL> ~/Workflow
 bash ~/Workflow/install.sh
 ```
 
-Open a **new** terminal (the installer saved `WORKFLOW_DIR` in `~/.bashrc`) and
-run `setup-user.sh` again; it skips what is already done.
+Open a **new** terminal (so `WORKFLOW_DIR` is set), then run the kit's setup:
 
 ```bash
 bash ~/Embed_WF/devbox/setup-user.sh
 ```
 
-This installs arduino-cli, the ESP32 core (≈ 1 GB, pinned to 3.3.10) and Arduino_GFX
-(1.6.8). It also installs **pi** and the short-loop workflow: the slash commands
-are linked into `~/.pi/agent/prompts/` (that is what makes `/start`, `/wrap`, `/define` and
-friends exist; linked, so a later `git pull` in `~/Embed_WF` or `~/Workflow` updates them by itself) and your
-"How I work" file is copied to `~/.pi/agent/AGENTS.md`. Open that
-file once and fill its one bracket. Last, it installs the `bench-*` commands,
-`new-embedded-project`, and `new-project`, a link to the workflow's own generator
-for projects that aren't embedded.
+It stops at once, before any download, if `WORKFLOW_DIR` isn't set. It is safe
+to run again.
 
-Open a **new** terminal and connect pi to a model:
+This installs arduino-cli, the ESP32 core (≈ 1 GB, pinned to 3.3.10) and Arduino_GFX
+(1.6.8). It also installs **Claude Code** and the slash commands: they are linked
+into `~/.claude/commands/` (that is what makes `/start`, `/wrap`, `/define` and
+friends exist; linked, so a later `git pull` in `~/Embed_WF` or `~/Workflow` updates
+them by itself), and your "How I work" file is copied to `~/.claude/CLAUDE.md`,
+both through the workflow's installer. Open that file once and fill its one
+bracket. Last, it installs the `bench-*` commands, `new-embedded-project`, and
+`new-project`, a link to the workflow's own generator for projects that aren't
+embedded.
+
+Open a **new** terminal and log Claude Code in to your Claude plan:
 
 ```bash
-pi
+claude
 ```
 
-Type `/login`, pick your provider and follow the prompts: an OpenAI (ChatGPT)
-login, GitHub Copilot, or an API key from most providers. Then `/model` to choose
-the model, and `/quit` when done.
+Over SSH it prints a link: open it on the Legion, log in, and paste the code
+back. `/exit` when done.
 
-**About Claude and pi.** A Claude Pro/Max plan's usage limits do not cover pi.
-Anthropic bills third-party harnesses separately (extra usage or API rates; the
-terms changed several times during 2026, so check the current ones before you
-count on it). If you want Claude models on your subscription, use Claude Code.
-The projects don't care: each has an `AGENTS.md` for pi and a one-line
-`CLAUDE.md` that makes Claude Code read the same file, and
-`tools/install-workflow.sh` installs the same slash commands for both. See
-the workflow's WORKFLOW.md §6. If you do run Claude Code on the dev box, run
-it as `embdev` too.
+**pi, later.** pi is the second agent for the day you can host your own models;
+Claude plans don't cover it. Nothing here needs it, and nothing needs changing to
+add it: each project's `AGENTS.md` is the file pi reads, and the installers
+already install the commands for pi if they find it. The differences are in the
+workflow's WORKFLOW.md §6.
 
 ### B4. Smoke test with a board
 
@@ -315,8 +320,8 @@ You should see something like `/dev/ttyACM0 … ESP32 Family Device`. If not, se
   ```
 - **VS Code.** Press `F1` → *Remote-SSH: Connect to Host…* → `embdev@<t480s-ip>` →
   *Open Folder* → `~/projects/<name>`. Open a terminal in VS Code (`` Ctrl+` ``)
-  and run `pi`. It runs **on the T480s**.
-- **Long runs: use tmux.** `tmux new -s work` then `pi`. If Wi-Fi drops or you
+  and run `claude`. It runs **on the T480s**.
+- **Long runs: use tmux.** `tmux new -s work` then `claude`. If Wi-Fi drops or you
   close the laptop, reconnect and `tmux attach -t work`, and the agent is still
   going. That's how you "go for lunch" like in the video. The same trick works
   from a phone with any SSH app.
@@ -333,10 +338,10 @@ new-embedded-project hello-board
 ```
 
 ```bash
-cd ~/projects/hello-board && pi
+cd ~/projects/hello-board && claude
 ```
 
-Inside pi, in this order:
+Inside Claude Code, in this order:
 
 1. **`/commission`**. The agent checks the toolchain, runs host tests, compiles,
    asks you which board is plugged in and **registers** it (R or C, once per
@@ -362,7 +367,7 @@ new-embedded-project desk-clock
    > internet, shows the indoor temperature from a sensor I'll attach, and dims
    > the screen at night. Touching the screen switches to a page with min/max
    > temperature today. Must work on both my boards.
-2. `pi` → **`/define`**. It asks one question at a time with suggested
+2. `claude` → **`/define`**. It asks one question at a time with suggested
    answers, then writes `docs/FSD.md`. Every requirement gets an ID and a test
    tier. Then it writes `docs/PLAN.md`, split into phases. **Read the FSD
    carefully.** This is the one document that matters; edit it until it says
@@ -372,7 +377,7 @@ new-embedded-project desk-clock
 4. **`/commission`** (quick this time: the boards are already registered).
 
 Each of the steps above is its own session: end it with **`/wrap`**, then
-`/new`. From here on, every session has the same shape:
+`/clear`. From here on, every session has the same shape:
 
 5. **`/start`** (it takes "Next" from `PROGRESS.md`; or name the item:
    `/start REQ-010`). The agent reads that plan item and its FSD rows and replies
@@ -381,23 +386,21 @@ Each of the steps above is its own session: end it with **`/wrap`**, then
    yet.
 6. The agent works that one item: tests first, then code, then host test →
    compile → flash → boot check → target test → fix → repeat, until the trace
-   gate is green. It stops and asks when it needs your hands (wiring, a board
-   that isn't plugged in), when it would have to leave the plan, when a decision
-   isn't covered by the FSD, when the same failure has survived three different
-   fixes, or after 25 test or build runs in the session (the Run limit). A bare
-   board on USB is flashed without asking. If the FSD says the board drives
-   something that can move, heat, switch mains or charge a battery, the plan says
-   so and the agent flashes only after your OK for that session.
+   gate is green. When it stops early to ask you is `/start`'s business (the
+   workflow's WORKFLOW.md §4). This kit sets the Run limit to 25 test or build
+   runs, and adds one rule: a bare board on USB is flashed without asking, but
+   if the FSD says the board drives something that can move, heat, switch mains
+   or charge a battery, the plan says so and the agent flashes only after your
+   OK for that session.
 7. **`/wrap`**. It runs the checks, rewrites `PROGRESS.md`, refreshes
    `docs/STATUS.md`, commits and pushes, and tells you what to look at.
    **Finished means checked by you.** An item with a `field` or `manual`
    requirement, or one that changes the screen, is not ticked yet: it sits under
    "Waiting on me" as "awaiting my check". Look at the real device. That's the
    human's half of the job.
-8. `/new` (or quit and start `pi` again), then **`/start`** for the next item.
-   The fresh session knows where it is from `PROGRESS.md` alone. It first asks
-   whether the item awaiting your check passed, and only then ticks it and
-   writes its history entry. One you reject becomes that session's task.
+8. `/clear`, then **`/start`** for the next item. The fresh session knows where
+   it is from `PROGRESS.md` alone, and first asks about anything awaiting your
+   check.
 
 Every few items, and before you call the project done, run **`/judge`** in a
 fresh session: it reviews the firmware against the FSD without having built it,
@@ -409,14 +412,20 @@ weekday**. The spec and plan get updated in that session; the code is the next
 
 ---
 
-## 6. Safety: pi never asks, so the account is the wall
+## 6. Safety: the allowlist runs the loop, the account is the wall
 
-Some agents ask before each command and let you build an allowlist. **pi does
-not.** In its own words: "No permission popups. Run in a container." It shows
-you every file read, command and edit, but it doesn't wait for a yes. That is
-video 1's "superclaude"/YOLO mode, permanently on.
+Claude Code asks before every command it hasn't been allowed to run. A loop that
+flashes and tests twenty times would wait on you twenty times, so each project
+has an allowlist in `.claude/settings.json`: `make`, `tools/esp_serial.py`,
+`tools/trace.py`, read-only `arduino-cli` and `gh run` commands, and the git
+commands the short-loop workflow runs (its WORKFLOW.md §8: pull, status, add,
+commit, show --stat, push) run without asking. Anything else
+still asks. It denies `sudo`, force-push, `git reset --hard`, and edits to the
+evidence under `build/`.
 
-So the protection is not in the agent. It is in where the agent runs:
+Be clear about what that list is: a convenience, not a lock. `make` runs
+whatever the Makefile says, and the agent may edit the Makefile. So the
+protection is still in where the agent runs:
 
 | What protects you | How |
 |---|---|
@@ -435,8 +444,8 @@ That is why the limits live in the account, not in asking the agent nicely.
 
 Rules of thumb:
 
-- Run `pi` **only** as `embdev` on the T480s, and only inside a project folder.
-  Never on the Legion.
+- Run the embedded loop **only** as `embdev` on the T480s, and only inside a
+  project folder. Never with the allowlist on the Legion.
 - Watch the first sessions. `Esc` stops the agent at once.
 - The rules the agent is asked to follow are in the template's `AGENTS.md`:
   credentials only in the git-ignored `firmware/src/secrets.h`; tests never touch
@@ -452,7 +461,7 @@ Whether you pay per token or have a subscription with a quota, coding agents rea
 a lot. To stretch it:
 
 - **One task per session.** That is the whole method: `/start`, work, `/wrap`,
-  `/new`. A long session re-reads everything it has already said on every turn.
+  `/clear`. A long session re-reads everything it has already said on every turn.
   `/compact` only rescues a session you can't end yet.
 - **Let the files be the memory**, not the chat. That's what `PROGRESS.md` (a
   snapshot under 60 lines, rewritten every `/wrap`) and `docs/history.md` (read
@@ -463,12 +472,12 @@ a lot. To stretch it:
   this.
 - **Summaries before datasheets.** `/datasheet` once, then the agent reads the
   150-line summary instead of a 90-page PDF.
-- **Plan in a chat app, build in pi.** Brainstorming in chat doesn't eat into a
+- **Plan in a chat app, build in Claude Code.** Brainstorming in chat doesn't eat into a
   build session.
-- `/model` (or `Ctrl+L`) switches the model. A lighter model is often enough for
-  routine loops; switch up for hard debugging.
-- `/session` shows the tokens and cost of the current session; the footer shows
-  them all the time.
+- `/model` switches the model. A lighter model is often enough for routine
+  loops; switch up for hard debugging.
+- `/context` shows how full the session is. Around 40%, finish the step and
+  `/wrap`.
 
 ---
 
@@ -536,7 +545,7 @@ and only turns PASS after a run on each.
 - **Dedicated bench hardware.** If the T480s ever needs its Wi-Fi back, a
   Raspberry Pi (as in video 3) becomes useful. The bench scripts are the
   interface, so tests won't need rewriting.
-- **Parallel projects.** Each project is a folder and repo. Run one `pi` per
+- **Parallel projects.** Each project is a folder and repo. Run one `claude` per
   tmux window, and give each project its own board with `BOARD=R` / `BOARD=C`.
 - **A VM on the Legion** is possible (16 GB RAM), but USB passthrough for
   flashing is fiddly on Windows. The T480s is the better dev box.
@@ -552,10 +561,11 @@ and only turns PASS after a run on each.
 ## 10. Glossary
 
 - **Agent**: an AI that can act (edit files, run commands), not only chat.
-- **Agent harness**: the program around the model that gives it those hands. Here: **pi**.
-- **pi**: an open-source terminal coding agent (pi.dev). Works with many model providers. Never asks before running a command.
-- **AGENTS.md**: a file pi reads automatically at the start of every session in that folder. It's the project's standing instructions.
-- **Slash command / prompt template**: a reusable instruction file, invoked as `/name`. Ours come from the short-loop workflow (`/start`, `/wrap`, `/judge`) and `prompts/`; `tools/install-workflow.sh` links them into pi (`~/.pi/agent/prompts/`) and Claude Code (`~/.claude/commands/`).
+- **Agent harness**: the program around the model that gives it those hands. Here: **Claude Code**.
+- **pi** (later): an open-source terminal coding agent (pi.dev), for when you can host your own models. Never asks before running a command.
+- **AGENTS.md**: the project's standing instructions, loaded at the start of every session in that folder. Claude Code reads it through the one-line `CLAUDE.md`.
+- **Allowlist**: `.claude/settings.json` in each project; the commands Claude Code may run without asking (§6).
+- **Slash command**: a reusable instruction file, invoked as `/name`. Ours come from the short-loop workflow (`/start`, `/wrap`, `/judge`) and `prompts/`; `tools/install-workflow.sh` links them into `~/.claude/commands/` (and pi's folder, once pi is installed).
 - **Short loop**: one task per session, with files (`PROGRESS.md` first) carrying the memory to the next one. See WORKFLOW.md in the workflow repository (`$WORKFLOW_DIR`).
 - **Done gate**: the command a task must pass before it counts as finished. Here: `make trace RUN=1 REQS="…"`.
 - **FSD**: Functional Specification Document. What the product must do, as testable requirements.
