@@ -36,7 +36,7 @@ doesn't carry a copy. It uses only what the workflow's WORKFLOW.md §8,
 "Building a kit on this workflow", lists, and finds the workflow through
 `WORKFLOW_DIR`, which the workflow's own installer sets.
 
-**Written against the contract of 20 November 2026.** If your workflow's §8
+**Written against the contract of 21 November 2026.** If your workflow's §8
 shows a later date, check what changed there before relying on this kit.
 
 ## Quick start (dev box, after reading the guide)
@@ -71,7 +71,7 @@ Then type `/commission` in Claude Code, `/wrap` when it finishes, and from then 
 | On-board run, C board (GT911) | **unverified**, so it gets checked and fixed during your first `/commission` |
 | Bench scripts (hotspot / MQTT / BLE) | written for Mint + NetworkManager; not yet run on your T480s |
 | Claude Code install + allowlist + slash commands | installer and project generator run in a throwaway home; the allowlist (`template/.claude/settings.json`) is valid JSON but has not yet carried a real `/start` … `/wrap` loop. Not yet on your T480s |
-| Short-loop workflow | external (`WORKFLOW_DIR`), relied on only through its §8 contract of 20 Nov 2026. `tools/install-workflow.sh` was run against it in a throwaway home; no agent has yet run `/start` … `/wrap` on an embedded project |
+| Short-loop workflow | external (`WORKFLOW_DIR`), relied on only through its §8 contract of 21 Nov 2026. `tools/install-workflow.sh` was run against it in a throwaway home; no agent has yet run `/start` … `/wrap` on an embedded project |
 
 Inspired by the "10 levels" / embedded AI harness approach described in the
 reference videos (see `docs/GUIDE.md` §1).
