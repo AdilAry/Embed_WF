@@ -20,6 +20,8 @@ Updated: [date and time]. Current state only, under ~60 lines. Finished work is 
 - nothing yet.
 
 ## How to run
+Needs: the dev box after `~/Embed_WF/devbox/setup-root.sh` and `setup-user.sh` (arduino-cli, ESP32 core and libraries at the versions in the Makefile). `make check` needs no board; `make loop` needs the board(s) registered once with `python3 tools/esp_serial.py register R` (or `C`) and on USB.
+
 ```
 make check                 # host tests + compile, no board needed
 make loop BOARD=R          # ... + flash, boot check and on-board tests
