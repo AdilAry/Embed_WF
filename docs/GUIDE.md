@@ -403,8 +403,7 @@ Each of the steps above is its own session: end it with **`/wrap`**, then
    check.
 
 Every few items, and before you call the project done, run **`/judge`** in a
-fresh session: it reviews the firmware against the FSD without having built it,
-and ranks what it finds by value per hour of fixing.
+fresh session, one that didn't build the work (the workflow's WORKFLOW.md §5).
 
 Want something changed later? **`/change-request` the clock should also show the
 weekday**. The spec and plan get updated in that session; the code is the next

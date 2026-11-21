@@ -1,7 +1,19 @@
 # Review history of the Embed_WF kit
 
-Eight passes so far. The newest is first. None of them has touched your real
+Nine passes so far. The newest is first. None of them has touched your real
 boards or the T480s, so the last section is the list that matters most.
+
+## Pass 9 (November 2026): contract of 21 November 2026
+
+The workflow's §8 contract moved to 21 November. Nothing in the kit broke: the
+new "At /judge also" fields are optional, the git commands are unchanged, and
+the template has none of the fields that switch on `/judge`'s competition steps.
+
+| # | Change | Why |
+|---|---|---|
+| 1 | README names the contract of 21 November 2026 | The date line. |
+| 2 | GUIDE §5 no longer says how `/judge` ranks issues; it points to WORKFLOW.md §5 | It described the old "value per hour", and how a workflow command works inside. |
+| 3 | `template/PROGRESS.md` "How to run" starts with a `Needs:` line: the dev box after both setup scripts; for `make loop`, the boards registered and on USB | `/judge` step 2 would have counted the dev box, the boards and flashing as issues in every pass. The fix landed in the workflow: the setup "How to run" says a machine needs is expected. **An existing project adds this `Needs:` line by hand.** |
 
 ## Pass 8 (November 2026): Claude Code is the agent, pi is for later
 
