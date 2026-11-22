@@ -476,8 +476,8 @@ a lot. To stretch it:
   build session.
 - `/model` switches the model. A lighter model is often enough for routine
   loops; switch up for hard debugging.
-- `/context` shows how full the session is. Around 40%, finish the step and
-  `/wrap`.
+- `/context` shows how full the session is. When to stop and `/wrap` is in the
+  workflow's WORKFLOW.md §4, "Watch the context".
 
 ---
 
