@@ -44,8 +44,9 @@ itself can't run.
 | `bench-wifi: refusing - wlp… is this machine's internet connection` | Plug in Ethernet (or a USB Wi-Fi dongle) first. That's deliberate. |
 | `bench-wifi up` asks for a password / "Not authorized" | The polkit rule from `setup-root.sh` didn't apply. Reboot once. Check that `/etc/polkit-1/rules.d/50-embwf-networkmanager.rules` exists. |
 | ESP32 can't reach `bench-mqtt` at 10.42.0.1 | `bench-mqtt status`. If ufw is active: `sudo ufw allow from 10.42.0.0/24 to any port 1883`. |
-| `bench-ble-scan` fails | `bluetoothctl show` → `Powered: yes`? Run `rfkill unblock bluetooth`. |
-| SSH from Windows times out | Is the T480s asleep? Set the lid action to "Do nothing" and disable suspend on AC. Check the IP in the router. |
+| `bench-wifi: no Wi-Fi interface found`, or the card shows `unmanaged` in `nmcli device` | Run `setup-root.sh` again: its step 6 checks the firmware and names the fix (install `firmware-iwlwifi`, or remove the card's lines from `/etc/network/interfaces`). Reboot after either. |
+| `bench-ble-scan` fails | `bluetoothctl show` → `Powered: yes`? If not, from your own account: `sudo rfkill unblock bluetooth` (on Debian `rfkill` is in `/usr/sbin`, outside embdev's PATH). No controller at all: `firmware-iwlwifi` is missing (see the row above). |
+| SSH from Windows times out | Is the T480s asleep? With nobody logged in, the lid is handled by `/etc/systemd/logind.conf.d/50-embwf-lid.conf` (`setup-root.sh` writes it; it applies after a reboot). While you're logged in to Plasma, its Power Management lid setting must be "Do nothing" too. Check the IP in the router. |
 | Agent stopped when I closed my laptop | Run it inside `tmux` (see GUIDE §B5). |
 
 ## Claude Code (the agent)

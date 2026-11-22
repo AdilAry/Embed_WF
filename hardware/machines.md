@@ -30,7 +30,7 @@ Arduino IDE still works here for quick manual experiments.
 | Model | Lenovo ThinkPad T480s 20L8S09L00 |
 | CPU / GPU | Intel Core i5-8350U (4C/8T) / Intel UHD 620 |
 | RAM / disk | 8 GB DDR4-2666 (single channel) / 380 GB SSD |
-| OS | Linux Mint |
+| OS | Debian 13.7 (trixie), KDE Plasma |
 | Ports used | USB-A/USB-C → ESP32 boards · Ethernet → router · Intel Wi-Fi → test hotspot · Bluetooth → BLE tests |
 
 **Role:** runs the agent (Claude Code), arduino-cli and the tests as the unprivileged user
@@ -48,7 +48,9 @@ an MQTT broker (`bench-mqtt`), and BLE scanning (`bench-ble-scan`).
   `sudo dmidecode -t memory` shows what's fitted where. If the slot is empty, an
   8 GB DDR4-2666 SODIMM gives 16 GB and dual channel. That's a cheap upgrade if
   you ever run ESP-IDF builds locally.
-- Keep it on AC with lid-close set to "Do nothing".
+- Keep it on AC with the lid ignored: KDE's Power Management set to "Do nothing"
+  (applies while you're logged in to Plasma) and the systemd-logind drop-in
+  from `setup-root.sh` (applies when nobody is).
 
 ## Boards
 
