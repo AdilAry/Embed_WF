@@ -22,7 +22,7 @@ VS Code: `F1` → *Remote-SSH: Connect to Host* → open `~/projects/<name>`.
 | Next task | `/clear`, then `/start` | |
 | Fresh-eyes review | `/judge` in a **new** session (`/judge final` at the end) | pick which issues get fixed |
 
-Around 40% context: finish the step and `/wrap`. Wrong path: go back (`Esc Esc`, rewind) instead of correcting.
+When to `/wrap` as the context fills: WORKFLOW.md §4, "Watch the context". Wrong path: go back (`Esc Esc`, rewind) instead of correcting.
 
 ## Project lifecycle (embedded)
 
