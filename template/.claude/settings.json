@@ -38,9 +38,7 @@
       "Bash(rm -rf ~:*)",
       "Bash(sudo:*)",
       "Edit(./build/**)",
-      "Write(./build/**)",
       "Edit(./firmware/src/build_id.h)",
-      "Write(./firmware/src/build_id.h)",
       "Read(./.env)",
       "Read(~/.ssh/**)"
     ]

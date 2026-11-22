@@ -21,7 +21,10 @@ core) doesn't touch this kit.
 
 Also since pass 9: GUIDE §7 and the cheatsheet point to WORKFLOW.md §4 ("Watch
 the context") for when to wrap, instead of restating "40%", which workflow v2.9
-dropped.
+dropped. And the allowlist loses its `Write(./build/**)` and
+`Write(./firmware/src/build_id.h)` denies: Claude Code never matches a
+`Write(path)` rule, and the `Edit(...)` lines beside them cover every
+file-editing tool.
 
 ## Pass 9 (November 2026): contract of 21 November 2026
 
