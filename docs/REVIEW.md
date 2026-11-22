@@ -1,7 +1,30 @@
 # Review history of the Embed_WF kit
 
-Nine passes so far. The newest is first. None of them has touched your real
+Ten passes so far. The newest is first. None of them has touched your real
 boards or the T480s, so the last section is the list that matters most.
+
+## Pass 10 (November 2026): the dev box moves to Debian 13
+
+Session 3 of 3. The T480s runs Debian 13.7 (trixie) with KDE Plasma instead of
+Linux Mint, before its first run. The contract date stays 21 November 2026:
+WORKFLOW.md §9 says the 22 November change (competition material leaves the
+core) doesn't touch this kit.
+
+| # | Change | Why |
+|---|---|---|
+| 1 | `setup-root.sh` adds `/usr/sbin` to its PATH, and says to use `su -` when your account has no sudo | Debian's plain `su` keeps your PATH without `/usr/sbin`: `adduser` and `usermod` would not be found. With a root password set at install, your account gets no sudo. |
+| 2 | Packages add `dnsmasq-base`, `wpasupplicant` (the hotspot), `avahi-daemon`, `libnss-mdns` (`<hostname>.local`), `pciutils`; `adduser --gecos` becomes `--comment` | Debian only recommends the first two; the script's closing message relies on mDNS; `--gecos` is now an old alias. |
+| 3 | New step 6: installs `firmware-iwlwifi` when the Intel card has none (or says how to enable non-free-firmware), and warns if NetworkManager sees no Wi-Fi device, or one that is `unmanaged` or `unavailable` | `bench-wifi` needs NetworkManager in charge of the card, and the 8265's Bluetooth firmware is in the same package. The branches were run against stub commands, not on a real Debian. |
+| 4 | New step 9: `/etc/systemd/logind.conf.d/50-embwf-lid.conf` with `HandleLidSwitchExternalPower=ignore`, active after a reboot | KDE's lid setting holds only while someone is logged in to Plasma; over SSH with nobody logged in, logind would suspend. The script doesn't restart logind, which could end the running desktop session. |
+| 5 | The `.pkla` polkit file is no longer written; only the JS rule | Debian 13's polkit doesn't read `.pkla` files, and Mint is no longer a target. |
+| 6 | GUIDE B1/B2 (install choices, sudo, update, lid), the diagram, README, AGENTS.md, `machines.md`, troubleshooting (Wi-Fi device, `rfkill` path, lid) say Debian | `brltty` is still removed if present: harmless where it isn't installed. |
+
+Also since pass 9: GUIDE §7 and the cheatsheet point to WORKFLOW.md §4 ("Watch
+the context") for when to wrap, instead of restating "40%", which workflow v2.9
+dropped. And the allowlist loses its `Write(./build/**)` and
+`Write(./firmware/src/build_id.h)` denies: Claude Code never matches a
+`Write(path)` rule, and the `Edit(...)` lines beside them cover every
+file-editing tool.
 
 ## Pass 9 (November 2026): contract of 21 November 2026
 
@@ -136,24 +159,30 @@ mapped from the three videos onto your two laptops and two boards.
 
 Nothing here has run on real hardware. In the order you will meet them:
 
-1. **Claude Code, the allowlist and the slash commands.** After `setup-user.sh`,
+1. **Debian on the T480s.** `setup-root.sh` has never run on Debian (it was
+   checked with `bash -n` and stub commands only). Step 6 must report the Wi-Fi
+   card as managed by NetworkManager. After the reboot, close the lid with
+   nobody logged in: SSH from the Legion must still answer. `bluetoothctl show`
+   must list a controller.
+2. **Claude Code, the allowlist and the slash commands.** After `setup-user.sh`,
    start `claude` in a project and type `/` : `/start`, `/wrap`, `/define` and
    the others should be offered. Then `make check` must run without a permission
-   prompt. If not, see troubleshooting.
-2. **The serial tool against a real board.** Everything in the loop goes through
+   prompt, and so must the first `/wrap`'s `tail -n 15` of `docs/history.md`. If
+   not, see troubleshooting.
+3. **The serial tool against a real board.** Everything in the loop goes through
    it. `/commission` exercises it step by step; the first one may need fixes.
-3. **`make open-check`.** On the ESP32-S3's built-in USB the DTR/RTS lines double
+4. **`make open-check`.** On the ESP32-S3's built-in USB the DTR/RTS lines double
    as reset signals, and Linux toggles them when a port is opened. If that resets
    your board, the check says so (`OPENCHECK:RESETS`). Single commands still
    work then, but multi-step bench tests would lose device state between steps.
-4. **R board**: `make loop BOARD=R`. If `T-BOOT` fails, look at `boot_ms=`. The 2 s
+5. **R board**: `make loop BOARD=R`. If `T-BOOT` fails, look at `boot_ms=`. The 2 s
    USB wait in `setup()` counts toward it, so a value just under 3000 is plausible.
-5. **C board**: `make loop BOARD=C`. `T-TOUCH` now fails if the GT911 isn't found.
+6. **C board**: `make loop BOARD=C`. `T-TOUCH` now fails if the GT911 isn't found.
    If the serial log says "GT911 answered after reset", the fallback was needed;
    record that in the board file.
-6. **The resistive controller itself** can't be detected electrically. The
+7. **The resistive controller itself** can't be detected electrically. The
    corner-tap step in `/commission` is its only proof.
-7. On the T480s: `bench-wifi up` / `down` and `bench-mqtt start` once by hand
+8. On the T480s: `bench-wifi up` / `down` and `bench-mqtt start` once by hand
    before trusting bench tests.
 
 ## Not changed, on purpose

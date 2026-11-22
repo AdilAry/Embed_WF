@@ -7,7 +7,7 @@ session, with you approving the plan before and checking the result after.
 Nothing counts as finished until you have checked it.
 
 Built for: Claude Code on a Claude plan (pi later, for self-hosted models), a Windows
-laptop to supervise from, an old Linux Mint laptop as the agent's sandbox and
+laptop to supervise from, an old Debian 13 laptop as the agent's sandbox and
 test bench, and Guition JC4827W543 (ESP32-S3, 4.3" touch) boards in both the
 resistive and capacitive variants.
 
@@ -69,7 +69,7 @@ Then type `/commission` in Claude Code, `/wrap` when it finishes, and from then 
 | Firmware compile | checked by CI on every push (`template` workflow) |
 | On-board run, R board (XPT2046) | display/touch code taken from your proven sketch; first full run happens at your first `/commission` |
 | On-board run, C board (GT911) | **unverified**, so it gets checked and fixed during your first `/commission` |
-| Bench scripts (hotspot / MQTT / BLE) | written for Mint + NetworkManager; not yet run on your T480s |
+| Bench scripts (hotspot / MQTT / BLE) | written for Debian 13 + NetworkManager; not yet run on your T480s |
 | Claude Code install + allowlist + slash commands | installer and project generator run in a throwaway home; the allowlist (`template/.claude/settings.json`) is valid JSON but has not yet carried a real `/start` … `/wrap` loop. Not yet on your T480s |
 | Short-loop workflow | external (`WORKFLOW_DIR`), relied on only through its §8 contract of 21 Nov 2026. `tools/install-workflow.sh` was run against it in a throwaway home; no agent has yet run `/start` … `/wrap` on an embedded project |
 

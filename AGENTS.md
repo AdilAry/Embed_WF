@@ -37,7 +37,7 @@ Prefer simple, well-commented scripts over clever ones.
 - `docs/` — human guide for the embedded layer (GUIDE, cheatsheet, testing,
   troubleshooting, REVIEW).
 - `tests/` — pytest tests for `template/tools/*.py`. Run `python3 -m pytest -q tests`.
-- `devbox/` — Mint setup scripts (root part / user part). Must stay idempotent.
+- `devbox/` — Debian 13 setup scripts (root part / user part). Must stay idempotent.
 - `bench/` — dev-box test-bench commands, linked into `~/.local/bin`.
 
 ## Rules

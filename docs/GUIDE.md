@@ -28,7 +28,7 @@ To make that safe and practical you need four things:
 
 ```
  ┌──────────────────────────┐   SSH / VS Code    ┌────────────────────────────────┐   USB-C   ┌──────────────┐
- │ Legion (Windows)         │ ─────────────────▶ │ T480s (Linux Mint) "dev box"   │ ────────▶ │ Guition R+C  │
+ │ Legion (Windows)         │ ─────────────────▶ │ T480s (Debian 13) "dev box"    │ ────────▶ │ Guition R+C  │
  │ - chat app: ideas, spec  │                    │ - user embdev (no sudo)        │           │ ESP32-S3     │
  │   reviews                │                    │ - Claude Code + arduino-cli    │ ◀─ Wi-Fi ─│ boards       │
  │ - VS Code: view files    │                    │ - bench-wifi (test hotspot)    │  (test    └──────────────┘
@@ -172,28 +172,48 @@ Python, so it would work the same under another agent. The one Claude Code file,
 
 ### B1. Before you start
 
+- **Install Debian 13 with KDE Plasma** (skip if it's on already). Use the
+  official installer image; it carries the firmware for the T480s's Intel Wi-Fi
+  and Bluetooth. Two choices matter:
+  - **Leave the root password empty.** Then the installer gives your own
+    account `sudo`, which this guide uses.
+  - **Software selection:** tick *KDE Plasma*, *SSH server* and *standard
+    system utilities*.
+- **Root password already set?** Then your account has no `sudo` yet. Fix it
+  once, as root (`su -` with the dash: plain `su` can't find `usermod`):
+  ```bash
+  su -
+  ```
+  ```bash
+  apt install sudo && usermod -aG sudo <your-user>
+  ```
+  Then log out completely and back in.
 - **Back up anything you care about on it.** You're about to give an AI agent an
   account on this machine. Step B2 locks your files away from it, but a backup is
   cheap insurance. Copy anything important to an external drive or the Legion.
-- **Update Mint.** Use the Update Manager, apply everything, and reboot. Then
-  check *System Info*: Mint 21.x or 22.x are both fine.
+- **Update Debian.** Run `sudo apt update && sudo apt full-upgrade` (or use
+  *Discover*), then reboot. `cat /etc/debian_version` should show 13.x.
 - **Ethernet.** Plug the T480s into your router with a cable. The test hotspot
   (`bench-wifi`) takes over the Wi-Fi card, so internet must come over the cable.
   `bench-wifi` refuses to start if the cable isn't there, so you can't cut
   yourself off by accident. A cheap USB Wi-Fi dongle also works.
 - **Forget your home Wi-Fi on this machine.** Once the cable works, remove the
-  saved home network (*Network Connections* → select it → delete). The agent's
+  saved home network (*System Settings*, the Wi-Fi page: select it → remove; or
+  `sudo nmcli connection delete "<name>"`). The agent's
   account is allowed to manage the network so it can run the test hotspot, and
   that permission would also let it read saved Wi-Fi passwords. `setup-root.sh`
   lists any that are still saved.
-- **Lid and power.** Go to *Power Management*, set "When the lid is closed" to
-  **Do nothing** (on AC power), and disable suspend on AC. The laptop can then
-  sit closed on a shelf like a little server. Keep it plugged in.
+- **Lid and power.** In *System Settings → Power Management*, on AC power, set
+  "When laptop lid closed" to **Do nothing** and turn off sleep when inactive.
+  KDE applies that only while you're logged in to Plasma. For the usual case,
+  nobody logged in and you on SSH, `setup-root.sh` (B2) tells systemd to ignore
+  the lid on AC. The laptop can then sit closed on a shelf like a little
+  server. Keep it plugged in.
 - **Give it a fixed address.** In your router, reserve a DHCP address for the
   T480s (for example 192.168.1.50). `t480s.local` often works from Windows too,
   but an IP always works.
 
-### B2. System setup (from your normal Mint account)
+### B2. System setup (from your own account)
 
 Download this repo as a ZIP from GitHub (green **Code** button → *Download ZIP*).
 GitHub names the extracted folder after the branch, `Embed_WF-master`. Open a
@@ -208,17 +228,24 @@ It asks for a password for the new `embdev` user. Then it:
 - creates `embdev` **without** admin rights, and makes the other home folders
   private (so the agent can't read your files)
 - installs git, make, g++, Python + pyserial + pytest, pdftotext, Mosquitto,
-  NetworkManager tools, BlueZ, tmux, SSH server and GitHub CLI
-- removes `brltty`, a braille daemon that steals USB-serial ports on Ubuntu-based systems
+  NetworkManager tools, BlueZ, tmux, SSH server, mDNS (so `<hostname>.local`
+  works) and GitHub CLI
+- removes `brltty` if it's installed, a braille daemon that steals USB-serial ports
 - puts `embdev` in the `dialout` group (serial port access)
+- checks the Intel Wi-Fi/Bluetooth firmware (installs `firmware-iwlwifi` if it's
+  missing) and that NetworkManager manages the Wi-Fi card, which `bench-wifi`
+  needs; it tells you what to fix if not
 - lets `embdev` start or stop the Wi-Fi hotspot without sudo (a polkit rule), and
   warns you about saved Wi-Fi networks
+- tells systemd to keep running when the lid is closed on AC, even with nobody
+  logged in
 
 Read the script first if you like. It's commented line by line. It's safe to run twice.
+Then reboot: the lid setting and any new firmware apply from then on.
 
 ### B3. User setup (as embdev)
 
-Log out, then log in as **embdev**, or from Windows run `ssh embdev@<t480s-ip>`.
+After the reboot, log in as **embdev**, or from Windows run `ssh embdev@<t480s-ip>`.
 
 Set your git identity first (the project generator needs it):
 
